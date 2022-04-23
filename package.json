@@ -1,6 +1,6 @@
 {
   "name": "sadadas",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "dependencies": {
     "@testing-library/jest-dom": "^5.16.4",
@@ -60,5 +60,5 @@
     "mumu-page-cli": "^1.0.0"
   },
   "readme": "ERROR: No README data found!",
-  "_id": "sadadas@0.1.0"
+  "_id": "sadadas@0.1.1"
 }
