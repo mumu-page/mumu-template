@@ -134,7 +134,7 @@ const MumuForm = () => {
         residence: ['zhejiang', 'hangzhou', 'xihu'],
         prefix: '86',
       }}
-      style={{padding: 20}}
+      style={{ padding: 20 }}
       scrollToFirstError
     >
       <Form.Item
@@ -347,5 +347,7 @@ const MumuForm = () => {
     </Form>
   );
 };
+
+MumuForm.componentName = 'MumuForm'
 
 export default MumuForm

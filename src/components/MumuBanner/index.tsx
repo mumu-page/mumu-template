@@ -16,4 +16,6 @@ function MumuBanner(props: MumuFormProps) {
   )
 }
 
+MumuBanner.componentName = 'MumuBanner'
+
 export default MumuBanner

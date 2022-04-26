@@ -48,7 +48,7 @@ function MumuTemplate(props: MumuTemplateProps) {
   const [components, setComponents] = useState(window.__mumu_config__.components.length
     ? window.__mumu_config__.components // window.__mumu_config__.components 是服务端注入的用户选择组件
     : props.children.map((c: any) => {
-      const name = kebabcase(c.type.name);
+      const name = kebabcase(c.type.componentName);
       const { data } = config.componentConfig.filter(config => config.name === name)?.[0] || {};
       return {
         name,
@@ -242,6 +242,7 @@ function MumuTemplate(props: MumuTemplateProps) {
       {
         components.map((component: { name: any; props: any; config: any; }) => {
           const Result = (ComponentList as any)[upperFirst(camelCase(component.name))]
+          if (!Result) return null
           return <div
             data-layout={component.props && component.props._layout}
             id={`mumu-render-id-_component_${uniqueid()}`}
