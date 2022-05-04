@@ -1,21 +1,13 @@
-import React, { useEffect, useState } from 'react'
-import {
-  postMsgToParent,
-  isEdit as _isEdit,
-  config,
-  isPreview,
-  baseUrl,
-  pageId,
-  xhrGet,
-} from '@/utils/utils'
+import React, {useCallback, useEffect} from 'react'
+import {baseUrl, config, isEdit as _isEdit, isPreview, pageId, postMsgToParent, xhrGet,} from '@/utils/utils'
 import MumuRemoteComponentsLoader from "./MumuRemoteComponentLoader";
 import MumuBanner from "@/components/MumuBanner";
 import MumuForm from "@/components/MumuForm";
-import clonedeep from "lodash.clonedeep";
 import uniqueid from "lodash.uniqueid";
 import upperFirst from "lodash.upperfirst";
 import camelCase from "lodash.camelcase";
 import kebabcase from "lodash.kebabcase";
+import {useImmer,} from "use-immer";
 
 declare global {
   interface Window {
@@ -33,68 +25,74 @@ const ComponentList = {
   MumuBanner,
   MumuForm,
 }
-function MumuTemplate(props: MumuTemplateProps) {
-  const [init, setInit] = useState(false) // 内嵌 iframe 初始化完成
-  const [loaded, setLoaded] = useState(false) // 页面数据准备完成，为了预览功能
-  // const [sortOption, setSortOption] = useState({
-  //   group: {
-  //     name: 'components',
-  //     pull: true,
-  //     put: true
-  //   },
-  //   sort: true,
-  //   animation: 200
-  // })
-  const [components, setComponents] = useState(window.__mumu_config__.components.length
-    ? window.__mumu_config__.components // window.__mumu_config__.components 是服务端注入的用户选择组件
-    : props.children.map((c: any) => {
-      const name = kebabcase(c.type.componentName);
-      const { data } = config.componentConfig.filter(config => config.name === name)?.[0] || {};
-      return {
-        name,
-        props: c.props || data
-      };
-    }))
-  const [componentConfig] = useState(config.componentConfig)
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [remoteComponents, setRemoteComponents] = useState([])
-  const [page, setPage] = useState({
-    schema: (config.pageConfig as any).schema,
-    props: (window.__mumu_config__.pageData && window.__mumu_config__.pageData.props) || (config.pageConfig as any).data
-  })
-  const [isEdit, setIsEdit] = useState(_isEdit)
 
-  /**
-   * 返回内容
-   */
-  const getConfig = () => {
-    setInit(true)
+interface State {
+  init: boolean,
+  loaded: boolean,
+  components: any[]
+  componentConfig: any[]
+  currentIndex: number
+  remoteComponents: any[]
+  page: Record<string, any>
+  isEdit: boolean
+}
+
+function MumuTemplate(props: MumuTemplateProps) {
+  const initialState = {
+    init: false,
+    loaded: false,
+    components: window.__mumu_config__.components.length // window.__mumu_config__.components 是服务端注入的用户选择组件
+      ? window.__mumu_config__.components.map((item: any) => ({...item, id: `mumu-render-id-_component_${uniqueid()}`}))
+      : props.children.map((c: any) => {
+        const name = kebabcase(c.type.componentName);
+        const {data} = config.componentConfig.filter(config => config.name === name)?.[0] || {};
+        return {
+          name,
+          id: `mumu-render-id-_component_${uniqueid()}`,
+          props: c.props || data
+        };
+      }),
+    componentConfig: config.componentConfig,
+    currentIndex: 0,
+    remoteComponents: [],
+    page: {
+      schema: (config.pageConfig as any).schema,
+      props: (window.__mumu_config__.pageData && window.__mumu_config__.pageData.props) || (config.pageConfig as any).data
+    },
+    isEdit: _isEdit
+  }
+  const [state, setState] = useImmer<State>(initialState)
+
+  useEffect(() => {
     postMsgToParent({
       type: 'returnConfig',
       data: {
-        components: componentConfig,
-        userSelectComponents: components,
-        currentIndex: currentIndex,
-        remoteComponents: remoteComponents,
-        page: page
+        components: state.componentConfig,
+        userSelectComponents: state.components,
+        currentIndex: state.currentIndex,
+        remoteComponents: state.remoteComponents,
+        page: state.page
       }
     });
-  }
+  }, [state])
 
   /**
    * 设置组件
-   * @param config 
+   * @param config
    */
   const setConfig = (config: { userSelectComponents: any; page: any; }) => {
-    setComponents(config.userSelectComponents)
-    setPage(config.page)
-    getConfig();
+    setState(draft => {
+      draft.components = config.userSelectComponents
+      draft.page = config.page
+    })
   }
 
-  const reset = ({ userSelectComponents, currentIndex, page }: any) => {
-    setComponents(userSelectComponents);
-    setCurrentIndex(currentIndex)
-    setPage(page)
+  const reset = ({userSelectComponents, currentIndex, page}: any) => {
+    setState(draft => {
+      draft.components = userSelectComponents
+      draft.currentIndex = currentIndex
+      draft.page = page
+    })
     props?.init?.(page.props)
   }
 
@@ -103,17 +101,16 @@ function MumuTemplate(props: MumuTemplateProps) {
    * @param config
    * @param index
    */
-  const remoteComponentLoad = ({ config, index, js, css }: any) => {
-    if (!isEdit) return;
-    const has = remoteComponents.filter((item: any) => `${config.name}.${config.version}` === `${item.name}.${item.version}`)[0];
+  const remoteComponentLoad = ({config, index, js, css}: any) => {
+    if (!state.isEdit) return;
+    const has = state.remoteComponents.filter((item: any) => `${config.name}.${config.version}` === `${item.name}.${item.version}`)[0];
     if (!has) {
-      const _remoteComponents = clonedeep(remoteComponents) as any
-      _remoteComponents.push({
-        ...config, js, css
-      });
-      setRemoteComponents(_remoteComponents)
+      setState(draft => {
+        draft.remoteComponents.push({
+          ...config, js, css
+        })
+      })
     }
-    init && getConfig();
   }
 
   /**
@@ -121,27 +118,32 @@ function MumuTemplate(props: MumuTemplateProps) {
    * @param data
    * @param index
    */
-  const addComponent = ({ data, index }: any) => {
+  const addComponent = ({data, index}: any) => {
     // global-component 是系统组件
-    setCurrentIndex(index ? index + 1 : index)
+    setState(draft => {
+      draft.currentIndex = index ? index + 1 : index
+    })
     if (data.type === 'global-component') {
       // 远程组件的props和data从组件包中动态获取，不在这里设置
-      const _components = [...components.slice(0, currentIndex), {
-        name: 'mumu-remote-components-loader',
-        props: data.data,
-        config: {
-          ...data,
-          index: currentIndex
-        }
-      }, ...components.slice(currentIndex, components.length)];
-      setComponents(_components)
+      setState(draft => {
+        draft.components.splice(index, 0, {
+          name: 'mumu-remote-components-loader',
+          id: `mumu-render-id-_component_${uniqueid()}`,
+          props: data.data,
+          config: {
+            ...data,
+            index: state.currentIndex
+          }
+        })
+      })
     } else {
-      const _components = [...components.slice(0, currentIndex), {
-        name: data.name,
-        props: data.data
-      }, ...components.slice(currentIndex, components.length)];
-      setComponents(_components)
-      getConfig();
+      setState(draft => {
+        draft.components.splice(index, 0, {
+          name: data.name,
+          props: data.data,
+          id: `mumu-render-id-_component_${uniqueid()}`
+        })
+      })
     }
   }
 
@@ -151,15 +153,15 @@ function MumuTemplate(props: MumuTemplateProps) {
    */
   const changeProps = (payload: { type: string; }) => {
     if (payload.type === '__page') {
-      const _page = clonedeep(page)
-      setPage(_page)
-      props?.init?.(page.props)
+      setState(draft => {
+        draft.page = state.page
+        props?.init?.(state.page.props)
+      })
     } else {
-      const _components = clonedeep(components)
-      _components[currentIndex]['props'] = payload
-      setComponents(_components)
+      setState(draft => {
+        draft.components[state.currentIndex]['props'] = payload
+      })
     }
-    getConfig();
   }
 
   /**
@@ -167,39 +169,36 @@ function MumuTemplate(props: MumuTemplateProps) {
    * @param index
    */
   const changeIndex = (index: any) => {
-    setCurrentIndex(index)
-    getConfig();
+    setState(draft => {
+      draft.currentIndex = index
+    })
   }
 
   const deleteComponent = (index: number) => {
-    const _components = clonedeep(components)
-    _components.splice(index, 1);
-    setComponents(_components)
+    setState(draft => {
+      draft.components.splice(index, 1);
+    })
     changeIndex(index - 1 < 0 ? 0 : index - 1);
   }
 
-  const sortComponent = ({ index, op }: any) => {
-    const _components = clonedeep(components)
-    const tmp = _components[index];
+  const sortComponent = ({index, op}: any) => {
     const next = index + op;
-    _components[index] = _components[next];
-    _components[next] = tmp;
-    setComponents(_components)
+    setState(draft => {
+      draft.components[index] = state.components[next];
+      draft.components[next] = state.components;
+    })
     changeIndex(next);
   }
 
   const copyComponent = (index: number) => {
-    const _components = clonedeep(components)
-    setComponents([
-      ..._components.slice(0, index),
-      clonedeep(_components[index]),
-      ..._components.slice(index, _components.length)
-    ])
+    const _components = state.components
+    setState(draft => {
+      draft.components.splice(index, 0, _components[index])
+    })
     changeIndex(index + 1);
   }
 
   const handle = {
-    getConfig,
     setConfig,
     reset,
     remoteComponentLoad,
@@ -215,38 +214,53 @@ function MumuTemplate(props: MumuTemplateProps) {
     // 预览
     if (isPreview && baseUrl && pageId) {
       xhrGet(`${baseUrl}/project/preview?id=${pageId}`, (res) => {
-        setComponents(res.result.components);
-        setPage(res.result.pageData);
-        props?.init?.(page.props)
-        setLoaded(true)
+        const data = res?.data?.[0]?.pageConfig
+        setState(draft => {
+          draft.components = data.userSelectComponents
+          draft.page = data.pageData
+          draft.loaded = true
+          props?.init?.(state.page.props)
+        })
       });
       return;
     }
-    setLoaded(true)
-    props?.init?.(page.props)
-    if (!isEdit) return;
-    window.addEventListener('message', (e) => {
-      // 不接受消息源来自于当前窗口的消息
-      if (e.source === window || e.data === 'loaded') {
-        return;
-      }
-      setIsEdit(true);
-      (handle as any)?.[e.data.type]?.(e.data.data);
-    });
+    setState(draft => {
+      draft.loaded = true
+    })
+    props?.init?.(state.page.props)
   }, [])
 
-  if (!loaded) return null
+  const onMessage = useCallback((e: MessageEvent) => {
+    // 不接受消息源来自于当前窗口的消息
+    if (e.source === window || e.data === 'loaded') return
+    if (setState) {
+      setState(draft => {
+        draft.isEdit = true;
+      })
+    }
+    (handle as any)?.[e.data.type]?.(e.data.data);
+  }, [setState])
+
+  useEffect(() => {
+    if (!state.isEdit) return;
+    window.addEventListener('message', onMessage);
+    return () => {
+      window.removeEventListener('message', onMessage)
+    }
+  }, [])
+
+  if (!state.loaded) return null
   return (
-    <div id="slider-view" className="slider-view">
+    <div id="slider-view" className={`slider-view ${state.isEdit ? 'edit' : ''}`}>
       {/* 编辑容器 */}
       {
-        components.map((component: { name: any; props: any; config: any; }) => {
+        state.components.map((component: { name: any; props: any; config: any; id: any }) => {
           const Result = (ComponentList as any)[upperFirst(camelCase(component.name))]
           if (!Result) return null
           return <div
             data-layout={component.props && component.props._layout}
-            id={`mumu-render-id-_component_${uniqueid()}`}
-            key={uniqueid()}
+            id={component.id}
+            key={component.id}
           >
             {React.createElement(Result, {
               ...(component.props || {}),

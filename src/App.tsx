@@ -7,9 +7,7 @@ function App() {
   return (
     <MumuTemplate>
       <MumuBanner
-        data={{
-          src: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
-        }}
+        src={'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png'}
       />
       <MumuForm />
     </MumuTemplate>

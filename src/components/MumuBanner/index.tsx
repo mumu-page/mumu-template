@@ -1,15 +1,15 @@
 import React from 'react'
 
 interface MumuFormProps {
-  data: any
+  src: string
 }
 
 function MumuBanner(props: MumuFormProps) {
-  const { data } = props
-  
+  const { src } = props
+
   return (
     <img
-      src={data.src}
+      src={src}
       width="100%"
       alt="图片"
     />

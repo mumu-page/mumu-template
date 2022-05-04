@@ -5,3 +5,23 @@
 img {
   vertical-align: top;
 }
+
+html,body,#root,.edit {
+  height: 100%;
+  width: 100%;
+}
+
+.edit {
+  overflow: auto;
+}
+
+.edit::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+  background-color: #f0f2f5;
+}
+
+.edit::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, .3);
+  /*border-radius: 5px;*/
+}
