@@ -1,6 +1,6 @@
 import React, {useCallback, useEffect} from 'react'
 import {baseUrl, config, isEdit as _isEdit, isPreview, pageId, postMsgToParent, xhrGet,} from '@/utils/utils'
-import MumuRemoteComponentsLoader from "./MumuRemoteComponentLoader";
+import MumuRemoteComponentLoader from "./MumuRemoteComponentLoader";
 import MumuBanner from "@/components/MumuBanner";
 import MumuForm from "@/components/MumuForm";
 import uniqueid from "lodash.uniqueid";
@@ -21,7 +21,7 @@ interface MumuTemplateProps {
 }
 
 const ComponentList = {
-  MumuRemoteComponentsLoader,
+  MumuRemoteComponentLoader,
   MumuBanner,
   MumuForm,
 }
@@ -100,14 +100,17 @@ function MumuTemplate(props: MumuTemplateProps) {
    * 远程组件加载完成后需要生成 props
    * @param config
    * @param index
+   * @param js
+   * @param css
+   * @param schema
    */
-  const remoteComponentLoad = ({config, index, js, css}: any) => {
+  const remoteComponentLoad = ({config, index, js, css, schema}: any) => {
     if (!state.isEdit) return;
     const has = state.remoteComponents.filter((item: any) => `${config.name}.${config.version}` === `${item.name}.${item.version}`)[0];
     if (!has) {
       setState(draft => {
         draft.remoteComponents.push({
-          ...config, js, css
+          ...config, js, css, schema
         })
       })
     }
@@ -127,7 +130,7 @@ function MumuTemplate(props: MumuTemplateProps) {
       // 远程组件的props和data从组件包中动态获取，不在这里设置
       setState(draft => {
         draft.components.splice(index, 0, {
-          name: 'mumu-remote-components-loader',
+          name: 'mumu-remote-component-loader',
           id: `mumu-render-id-_component_${uniqueid()}`,
           props: data.data,
           config: {

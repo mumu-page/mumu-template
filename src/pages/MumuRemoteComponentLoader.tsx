@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from 'react'
 
 interface MumuRemoteComponentLoaderProps {
-  data: any;
   config: any;
   onRemoteComponentLoad: (p: any) => void
 }
 
 function MumuRemoteComponentLoader(props: MumuRemoteComponentLoaderProps) {
-  const { data, config, onRemoteComponentLoad } = props
-  const [Component, setComponent] = useState<React.ReactElement>(<></>)
+  const { config = {}, onRemoteComponentLoad, ...data } = props
+  const [Component, setComponent] = useState<React.ReactElement | null>(null)
 
   const render = () => {
     // 动态添加组件，用于可视化编辑场景
@@ -20,7 +19,6 @@ function MumuRemoteComponentLoader(props: MumuRemoteComponentLoaderProps) {
     } = config; 
     let component = window[name];
     if (!component) {
-      // console.log('加载远程组件 ' + name)
       const script = document.createElement('script');
       const link = document.createElement('link');
       script.src = js;
@@ -29,19 +27,23 @@ function MumuRemoteComponentLoader(props: MumuRemoteComponentLoaderProps) {
       document.head.appendChild(link);
       document.body.appendChild(script);
       script.onload = () => {
+        const loader = (window[name] as any)
         onRemoteComponentLoad({
-          ...window[name],
+          schema: loader?.config.schema,
+          config: loader?.config,
           js,
           css,
           index,
         })
-        component = (window[name] as any)?.Component;
-        setComponent(component as any)
+        component = loader?.Component;
+        setComponent(React.createElement(component as any, data))
       }
     } else {
       // 非动态化添加，用于构建场景
+      const loader = (window[name] as any)
       onRemoteComponentLoad({
-        ...window[name],
+        schema: loader?.config.schema,
+        config: loader?.config,
         js,
         css,
         index,
@@ -49,7 +51,7 @@ function MumuRemoteComponentLoader(props: MumuRemoteComponentLoaderProps) {
       // 先有 props 再挂组件，不然 props 是 null 可能会有错
       requestIdleCallback(() => {
         component = (window[name] as any)?.Component;
-        setComponent(component as any)
+        setComponent(React.createElement(component as any, data))
       })
     }
   }
@@ -60,10 +62,13 @@ function MumuRemoteComponentLoader(props: MumuRemoteComponentLoaderProps) {
 
   useEffect(() => {
     if (window[config.name]) {
-      setComponent((window[config.name] as any).Component)
+      setComponent(React.createElement((window[config.name] as any).Component as any, data))
     }
   }, [config.name])
-  return React.cloneElement(Component, data)
+
+  if(!Component) return <div>远程组件加载失败</div>
+
+  return Component
 }
 
 export default MumuRemoteComponentLoader
