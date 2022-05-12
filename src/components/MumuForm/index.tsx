@@ -79,11 +79,18 @@ const tailFormItemLayout = {
   },
 };
 
-const MumuForm = () => {
+interface FormProps {
+  btnText?: string
+  action?: string
+}
+
+const MumuForm = (props: FormProps) => {
+  const {btnText, action} = props
   const [form] = Form.useForm();
 
   const onFinish = (values: any) => {
     console.log('Received values of form: ', values);
+    console.log('action', action)
   };
 
   const prefixSelector = (
@@ -341,7 +348,7 @@ const MumuForm = () => {
       </Form.Item>
       <Form.Item {...tailFormItemLayout}>
         <Button type="primary" htmlType="submit">
-          Register
+          {btnText || 'Register'}
         </Button>
       </Form.Item>
     </Form>

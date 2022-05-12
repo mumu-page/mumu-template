@@ -156,7 +156,7 @@ function MumuTemplate(props: MumuTemplateProps) {
       })
     } else {
       setState(draft => {
-        draft.components[state.currentIndex]['props'] = payload
+        draft.components[draft.currentIndex]['props'] = payload
       })
     }
   }
