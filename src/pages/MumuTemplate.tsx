@@ -179,26 +179,29 @@ function MumuTemplate(props: MumuTemplateProps) {
   }
 
   const sortComponent = ({index, op}: any) => {
-    const next = index + op;
+    const next = index + op < 0 ? 0 : index + op;
     setState(draft => {
-      draft.components[index] = state.components[next];
-      draft.components[next] = state.components;
+      const tem = draft.components[next]
+      draft.components.splice(next, 1, draft.components[index])
+      draft.components.splice(index, 1, tem)
+      changeIndex(next);
     })
-    changeIndex(next);
   }
 
   const copyComponent = (index: number) => {
-    const _components = state.components
     setState(draft => {
-      draft.components.splice(index, 0, _components[index])
+      draft.components.splice(index, 0, {
+        ...draft.components[index],
+        id: `mumu-render-id-_component_${uniqueid()}`
+      })
     })
     changeIndex(index + 1);
   }
 
   const handle = {
-    setConfig,
+    setConfig, addComponent,
     reset,
-    addComponent,
+
     changeProps,
     changeIndex,
     deleteComponent,
