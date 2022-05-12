@@ -28,7 +28,6 @@ const ComponentList = {
 
 interface State {
   init: boolean,
-  loaded: boolean,
   components: any[]
   componentConfig: any[]
   currentIndex: number
@@ -38,10 +37,8 @@ interface State {
 }
 
 function MumuTemplate(props: MumuTemplateProps) {
-  const initialState = {
-    init: false,
-    loaded: false,
-    components: window.__mumu_config__.components.length // window.__mumu_config__.components 是服务端注入的用户选择组件
+  const initialComponent = () => {
+    return window.__mumu_config__.components.length // window.__mumu_config__.components 是服务端注入的用户选择组件
       ? window.__mumu_config__.components.map((item: any) => ({...item, id: `mumu-render-id-_component_${uniqueid()}`}))
       : props.children.map((c: any) => {
         const name = kebabcase(c.type.componentName);
@@ -51,7 +48,11 @@ function MumuTemplate(props: MumuTemplateProps) {
           id: `mumu-render-id-_component_${uniqueid()}`,
           props: c.props || data
         };
-      }),
+      })
+  }
+  const initialState = {
+    init: false,
+    components: initialComponent(),
     componentConfig: config.componentConfig,
     currentIndex: 0,
     remoteComponents: [],
@@ -62,19 +63,6 @@ function MumuTemplate(props: MumuTemplateProps) {
     isEdit: _isEdit
   }
   const [state, setState] = useImmer<State>(initialState)
-
-  useEffect(() => {
-    postMsgToParent({
-      type: 'returnConfig',
-      data: {
-        components: state.componentConfig,
-        userSelectComponents: state.components,
-        currentIndex: state.currentIndex,
-        remoteComponents: state.remoteComponents,
-        page: state.page
-      }
-    });
-  }, [state])
 
   /**
    * 设置组件
@@ -99,18 +87,24 @@ function MumuTemplate(props: MumuTemplateProps) {
   /**
    * 远程组件加载完成后需要生成 props
    * @param config
-   * @param index
+   * @param name
    * @param js
    * @param css
    * @param schema
    */
-  const remoteComponentLoad = ({config, index, js, css, schema}: any) => {
+  const remoteComponentLoad = ({config, name, js, css, schema}: any) => {
     if (!state.isEdit) return;
-    const has = state.remoteComponents.filter((item: any) => `${config.name}.${config.version}` === `${item.name}.${item.version}`)[0];
+    // name => [componentName]_v[版本号]
+    const has = state.remoteComponents.some((item: any) => `${name}` === `${item.name}`);
     if (!has) {
       setState(draft => {
         draft.remoteComponents.push({
-          ...config, js, css, schema
+          config,
+          js,
+          css,
+          schema,
+          name,
+          props: config.data,
         })
       })
     }
@@ -204,7 +198,6 @@ function MumuTemplate(props: MumuTemplateProps) {
   const handle = {
     setConfig,
     reset,
-    remoteComponentLoad,
     addComponent,
     changeProps,
     changeIndex,
@@ -212,26 +205,6 @@ function MumuTemplate(props: MumuTemplateProps) {
     sortComponent,
     copyComponent,
   }
-
-  useEffect(() => {
-    // 预览
-    if (isPreview && baseUrl && pageId) {
-      xhrGet(`${baseUrl}/project/preview?id=${pageId}`, (res) => {
-        const data = res?.data?.[0]?.pageConfig
-        setState(draft => {
-          draft.components = data.userSelectComponents
-          draft.page = data.pageData
-          draft.loaded = true
-          props?.init?.(state.page.props)
-        })
-      });
-      return;
-    }
-    setState(draft => {
-      draft.loaded = true
-    })
-    props?.init?.(state.page.props)
-  }, [])
 
   const onMessage = useCallback((e: MessageEvent) => {
     // 不接受消息源来自于当前窗口的消息
@@ -252,7 +225,35 @@ function MumuTemplate(props: MumuTemplateProps) {
     }
   }, [])
 
-  if (!state.loaded) return null
+  useEffect(() => {
+    // 预览
+    if (isPreview && baseUrl && pageId) {
+      xhrGet(`${baseUrl}/project/preview?id=${pageId}`, (res) => {
+        const data = res?.data?.[0]?.pageConfig
+        setState(draft => {
+          draft.components = data.userSelectComponents
+          draft.page = data.pageData
+          props?.init?.(state.page.props)
+        })
+      });
+      return;
+    }
+    props?.init?.(state.page.props)
+  }, [])
+
+  useEffect(() => {
+    postMsgToParent({
+      type: 'returnConfig',
+      data: {
+        components: state.componentConfig,
+        userSelectComponents: state.components,
+        currentIndex: state.currentIndex,
+        remoteComponents: state.remoteComponents,
+        page: state.page
+      }
+    });
+  }, [state])
+
   return (
     <div id="slider-view" className={`slider-view ${state.isEdit ? 'edit' : ''}`}>
       {/* 编辑容器 */}

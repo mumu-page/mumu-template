@@ -72,17 +72,7 @@ mumu-template v1.0.0
 Copyright 2021-2022 the original author or authors.
 Licensed under the Apache License, Version 2.0 (the 'License');
       `)
-    ],
-    configure: (webpackConfig, {
-      env, paths
-    }) => {
-      // webpackConfig.module.rules.push({
-      //   test: /\.svg$/i,
-      //   issuer: /\.[jt]sx?$/,
-      //   use: ['@svgr/webpack'],
-      // })
-      return webpackConfig
-    }
+    ]
   },
   plugins: [
     {
@@ -96,7 +86,7 @@ Licensed under the Apache License, Version 2.0 (the 'License');
         },
         modifyLessModuleRule: (lessModuleRule, context) => {
           lessModuleRule.test = lessModuleRegex;
-          // lessModuleRule.exclude = /node_modules|antd.*?\.css/;
+          lessModuleRule.exclude = /node_modules|antd.*?\.css/;
           return lessModuleRule;
         },
       },
