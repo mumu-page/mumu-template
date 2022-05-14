@@ -11,7 +11,7 @@ interface MumuRemoteComponentLoaderProps {
 function MumuRemoteComponentLoader(props: MumuRemoteComponentLoaderProps) {
   const { config = {}, onRemoteComponentLoad, ...data } = props
   const [Component, setComponent] = useState<React.ReactElement | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   const render = () => {
     // 动态添加组件，用于可视化编辑场景
@@ -49,6 +49,7 @@ function MumuRemoteComponentLoader(props: MumuRemoteComponentLoaderProps) {
       }
     } else {
       // 非动态化添加，用于构建场景
+      setLoading(false)
       const loader = (window[name] as any)
       onRemoteComponentLoad({
         schema: loader?.config.schema,

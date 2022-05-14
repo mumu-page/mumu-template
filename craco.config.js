@@ -9,24 +9,46 @@ module.exports = {
     alias: {
       "@": path.resolve('src')
     },
-    optimization: {
-      splitChunks: {
-        cacheGroups: {
-          commons: {
-            chunks: 'initial',
-            minChunks: 2,
-            maxInitialRequests: 5,
-            minSize: 0
+    configure: (webpackConfig, {env: webpackEnv, paths}) => {
+      if (webpackEnv === 'production') {
+        webpackConfig.plugins.push(new BundleAnalyzerPlugin({
+          analyzerMode: 'static',
+          openAnalyzer: false, // 构建完打开浏览器
+          reportFilename: path.resolve(__dirname, `build/analyzer.html`),
+        }))
+        webpackConfig.optimization.splitChunks = {
+          ...webpackConfig.optimization.splitChunks,
+          cacheGroups: {
+            commons: {
+              chunks: 'all',
+              // 将两个以上的chunk所共享的模块打包至commons组。
+              minChunks: 2,
+              name: 'commons',
+              priority: 80,
+            },
+            base: {
+              // 基本框架
+              chunks: 'all',
+              test: /(react|react-dom|react-dom-router)/,
+              name: 'base',
+              priority: 100,
+            },
+            antd: {
+              name: 'antd',
+              chunks: 'all',
+              test: /(antd|moment|immutable\/dist|braft-finder\/dist|lodash|rc-(.*)\/es)[\\/]/,
+              priority: 100,
+            },
+            immer: {
+              name: 'immer',
+              chunks: 'all',
+              test: /(immer)/,
+              priority: 100,
+            },
           },
-          vendor: {
-            test: /node_modules/,
-            chunks: 'initial',
-            name: 'vendor',
-            priority: 10,
-            enforce: true
-          }
-        }
+        };
       }
+      return webpackConfig;
     },
     plugins: [
       new HtmlWebpackExternalsPlugin({
