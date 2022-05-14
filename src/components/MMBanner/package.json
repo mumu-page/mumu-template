@@ -1,0 +1,26 @@
+{
+  "name": "mumu-banner",
+  "description": "banner",
+  "snapshot": "https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "src": {
+        "title": "图片地址",
+        "type": "string",
+        "format": "image"
+      },
+      "link": {
+        "title": "跳转链接",
+        "type": "string",
+        "format": "url"
+      }
+    },
+    "required": [
+      "src"
+    ]
+  },
+  "data": {
+    "src": "https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png"
+  }
+}

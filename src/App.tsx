@@ -1,16 +1,16 @@
 import React from 'react';
-import MumuTemplate from './pages/MumuTemplate';
-import MumuBanner from './components/MumuBanner';
-import MumuForm from './components/MumuForm';
+import MMTemplate from './pages/MMTemplate';
+import MMBanner from './components/MMBanner';
+import MMBarChart3D from './components/MMBarChart3D';
 
 function App() {
   return (
-    <MumuTemplate>
-      <MumuBanner
+    <MMTemplate>
+      <MMBanner
         src={'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png'}
       />
-      <MumuForm />
-    </MumuTemplate>
+      <MMBarChart3D />
+    </MMTemplate>
   );
 }
 

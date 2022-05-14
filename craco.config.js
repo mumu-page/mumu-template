@@ -11,11 +11,6 @@ module.exports = {
     },
     configure: (webpackConfig, {env: webpackEnv, paths}) => {
       if (webpackEnv === 'production') {
-        webpackConfig.plugins.push(new BundleAnalyzerPlugin({
-          analyzerMode: 'static',
-          openAnalyzer: false, // 构建完打开浏览器
-          reportFilename: path.resolve(__dirname, `build/analyzer.html`),
-        }))
         webpackConfig.optimization.splitChunks = {
           ...webpackConfig.optimization.splitChunks,
           cacheGroups: {
@@ -86,6 +81,11 @@ module.exports = {
             entry:
               'https://cdn.jsdelivr.net/npm/@ant-design/icons@4/dist/index.umd.js',
             global: 'icons',
+          },
+          {
+            module: 'data-view-react',
+            entry: 'https://unpkg.com/@jiaminghi/data-view-react/umd/datav.min.js',
+            global: 'datav',
           },
         ]
       }),

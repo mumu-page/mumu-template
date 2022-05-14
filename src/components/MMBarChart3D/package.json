@@ -1,0 +1,21 @@
+{
+  "name": "mm-bar-chart-3d",
+  "description": "立体柱状图",
+  "snapshot": "https://cloud.resonance.fun/?explorer/share/file&hash=bc9f3bI1zPdF2X--QMAjdSWLS3M2SxfdGi-9BWWTBeMjce4lyBd7D9Z5xWY2fBEGsk-d",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "option": {
+        "title": "图表配置",
+        "type": "array",
+        "format": "table"
+      }
+    },
+    "required": [
+      "option"
+    ]
+  },
+  "data": {
+
+  }
+}
