@@ -181,6 +181,7 @@ function MMTemplate(props: MMTemplateProps) {
         state.components.map((component: { name: any; props: any; config: any; id: any }) => {
           const Result = (ComponentList as any)[upperFirst(camelCase(component.name)).replace('Mm', 'MM')]
           if (!Result) return null
+          console.log('component', component)
           return <div
             data-layout={component.props && component.props._layout}
             id={component.id}
