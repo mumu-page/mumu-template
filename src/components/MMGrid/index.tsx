@@ -1,5 +1,6 @@
 import React from 'react'
 import {Col, Divider, Row} from "antd";
+import {uniqueId} from 'lodash'
 import style from './index.module.less'
 
 interface MMBannerProps {
@@ -48,7 +49,7 @@ function MMGrid(props: MMBannerProps) {
   const colCount = colCounts[colCountKey];
   for (let i = 0; i < colCount; i++) {
     cols.push(
-      <Col key={i.toString()} span={24 / colCount}>
+      <Col key={uniqueId()} span={24 / colCount}>
         <div className={style.mmDroppablePlaceholder}>Column</div>
       </Col>,
     );
