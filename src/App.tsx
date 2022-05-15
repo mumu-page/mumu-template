@@ -8,11 +8,11 @@ function App() {
   return (
     <MMTemplate>
       <MMGrid />
-      <MMBanner
-        src={'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png'}
-      />
-      <MMGrid />
-      {/*<MMBarChart3D backgroundColor={""} color={[]}/>*/}
+      {/*<MMBanner*/}
+      {/*  src={'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png'}*/}
+      {/*/>*/}
+      {/*<MMGrid />*/}
+      <MMBarChart3D backgroundColor={""} color={[]}/>
     </MMTemplate>
   );
 }

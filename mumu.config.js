@@ -1,6 +1,6 @@
 module.exports = {
   name: 'mumu-template',
-  templateName: '营销活动',
+  templateName: '可视化大屏搭建模板',
   author: 'mumu',
   snapshot: 'https://cdn.img.snapshot.png',
   gitUrl: 'mumu-page/mumu-template',
