@@ -50,7 +50,7 @@ export const pageId = query.pageId
 
 export const baseUrl = {
   development: 'http://127.0.0.1:7001',
-  production: 'https://api.resonance.fun:8080'
+  production: 'https://mumu-page-server.resonance.fun'
 }[env]
 
 export function postMsgToParent(message: any) {

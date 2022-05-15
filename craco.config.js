@@ -28,18 +28,18 @@ module.exports = {
               name: 'base',
               priority: 100,
             },
-            antd: {
-              name: 'antd',
-              chunks: 'all',
-              test: /(antd|moment|immutable\/dist|braft-finder\/dist|lodash|rc-(.*)\/es)[\\/]/,
-              priority: 100,
-            },
-            immer: {
-              name: 'immer',
-              chunks: 'all',
-              test: /(immer)/,
-              priority: 100,
-            },
+            // antd: {
+            //   name: 'antd',
+            //   chunks: 'all',
+            //   test: /(antd|moment|immutable\/dist|braft-finder\/dist|lodash|rc-(.*)\/es)[\\/]/,
+            //   priority: 100,
+            // },
+            // immer: {
+            //   name: 'immer',
+            //   chunks: 'all',
+            //   test: /(immer)/,
+            //   priority: 100,
+            // },
           },
         };
       }
@@ -86,6 +86,11 @@ module.exports = {
             module: 'data-view-react',
             entry: 'https://unpkg.com/@jiaminghi/data-view-react/umd/datav.min.js',
             global: 'datav',
+          },
+          {
+            module: 'echarts',
+            entry: 'https://cdn.jsdelivr.net/npm/echarts@5.3.2/dist/echarts.min.js',
+            global: 'echarts',
           },
         ]
       }),

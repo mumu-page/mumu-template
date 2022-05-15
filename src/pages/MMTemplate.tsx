@@ -5,6 +5,9 @@ import MMBanner from "@/components/MMBanner";
 import MMBarChart3D from "@/components/MMBarChart3D";
 import {uniqueId, upperFirst, camelCase ,kebabCase} from 'lodash'
 import {useImmer,} from "use-immer";
+import MMGrid from "@/components/MMGrid";
+
+const TEMPLATE_ELE_ID_PREFIX = 'mm-render-id-_component_'
 
 declare global {
   interface Window {
@@ -21,6 +24,7 @@ const ComponentList = {
   MMRemoteComponentLoader,
   MMBanner,
   MMBarChart3D,
+  MMGrid,
 }
 
 interface State {
@@ -38,14 +42,17 @@ const containerElementId = 'slider-view'
 function MMTemplate(props: MMTemplateProps) {
   const initialComponent = () => {
     return window.__mm_config__.components.length // window.__mm_config__.components 是服务端注入的用户选择组件
-      ? window.__mm_config__.components.map((item: any) => ({...item, id: `mm-render-id-_component_${uniqueId()}`}))
+      ? window.__mm_config__.components.map((item: any) => ({...item, id: `${TEMPLATE_ELE_ID_PREFIX}${uniqueId()}`}))
       : props.children.map((c: any) => {
         const name = kebabCase(c.type.componentName);
-        const {data} = config.componentConfig.filter(config => config.name === name)?.[0] || {};
+        const {data, schema, snapshot, description} = config.componentConfig.filter(config => config.name === name)?.[0] || {};
         return {
           name,
-          id: `mm-render-id-_component_${uniqueId()}`,
-          props: c.props || data
+          id: `${TEMPLATE_ELE_ID_PREFIX}${uniqueId()}`,
+          props: c.props || data,
+          schema,
+          snapshot,
+          description
         };
       })
   }
@@ -56,13 +63,13 @@ function MMTemplate(props: MMTemplateProps) {
     currentIndex: 0,
     remoteComponents: [],
     page: {
+      projectName: '模板页面',
       schema: (config.pageConfig as any).schema,
       props: (window.__mm_config__.pageData && window.__mm_config__.pageData.props) || (config.pageConfig as any).data
     },
-    isEdit: _isEdit
+    isEdit: _isEdit,
   }
   const [state, setState] = useImmer<State>(initialState)
-
   /**
    * 设置组件
    * @param config
@@ -109,9 +116,10 @@ function MMTemplate(props: MMTemplateProps) {
     }
   }
 
-  const setIframeComponents = ({components}: any) => {
+  const setIframeComponents = ({components, projectName}: any) => {
     setState(draft => {
       draft.components = components
+      draft.page.projectName = projectName
     })
   }
 
@@ -162,12 +170,16 @@ function MMTemplate(props: MMTemplateProps) {
     })
   }, [])
 
+  useEffect(() => {
+    document.title = state.page.projectName
+  }, [])
+
   return (
     <div id={containerElementId} className={`slider-view ${state.isEdit ? 'edit' : ''}`}>
       {/* 编辑容器 */}
       {
         state.components.map((component: { name: any; props: any; config: any; id: any }) => {
-          const Result = (ComponentList as any)[upperFirst(camelCase(component.name))]
+          const Result = (ComponentList as any)[upperFirst(camelCase(component.name)).replace('Mm', 'MM')]
           if (!Result) return null
           return <div
             data-layout={component.props && component.props._layout}

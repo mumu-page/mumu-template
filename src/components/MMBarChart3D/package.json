@@ -1,21 +1,36 @@
 {
-  "name": "mm-bar-chart-3d",
+  "name": "mm-bar-chart-3-d",
   "description": "立体柱状图",
   "snapshot": "https://cloud.resonance.fun/?explorer/share/file&hash=bc9f3bI1zPdF2X--QMAjdSWLS3M2SxfdGi-9BWWTBeMjce4lyBd7D9Z5xWY2fBEGsk-d",
   "schema": {
     "type": "object",
     "properties": {
-      "option": {
-        "title": "图表配置",
+      "color": {
+        "title": "自定义颜色",
         "type": "array",
-        "format": "table"
+        "format": "color"
+      },
+      "backgroundColor": {
+        "title": "背景色",
+        "type": "string",
+        "format": "color"
+      },
+      "padding": {
+        "title": "边距",
+        "type": "number",
+        "widget": "slider"
+      },
+      "height": {
+        "title": "高度",
+        "type": "number",
+        "widget": "slider"
       }
     },
-    "required": [
-      "option"
-    ]
+    "required": []
   },
   "data": {
-
+    "color": [],
+    "backgroundColor": "",
+    "padding": 30
   }
 }

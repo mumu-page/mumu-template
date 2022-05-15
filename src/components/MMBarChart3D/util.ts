@@ -1,5 +1,12 @@
 import * as echarts from 'echarts'
 
+declare global {
+  interface Window {
+    __mm_config__: any
+    echarts: any
+  }
+}
+
 const offsetX = 20;
 const offsetY = 10;
 // 绘制左侧面

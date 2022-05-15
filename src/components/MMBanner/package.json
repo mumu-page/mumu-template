@@ -1,5 +1,5 @@
 {
-  "name": "mumu-banner",
+  "name": "mm-banner",
   "description": "banner",
   "snapshot": "https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png",
   "schema": {
@@ -16,9 +16,7 @@
         "format": "url"
       }
     },
-    "required": [
-      "src"
-    ]
+    "required": []
   },
   "data": {
     "src": "https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png"

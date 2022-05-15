@@ -47,6 +47,9 @@ function MMRemoteComponentLoader(props: MMRemoteComponentLoaderProps) {
         setLoading(false)
         setComponent(null)
       }
+      link.onerror = () => {
+        console.log(`样式加载失败: ${name}`)
+      }
     } else {
       // 非动态化添加，用于构建场景
       setLoading(false)
@@ -81,7 +84,7 @@ function MMRemoteComponentLoader(props: MMRemoteComponentLoaderProps) {
     <Empty className={style.empty} image={<WarningTwoTone style={{fontSize: 70}} />} description={`远程组件加载失败: ${config.name}`} />
   </div>
 
-  return Component
+  return React.cloneElement(Component, data)
 }
 
 export default MMRemoteComponentLoader

@@ -1,0 +1,28 @@
+{
+  "name": "mm-grid",
+  "description": "网格布局",
+  "snapshot": "https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "gutterKey": {
+        "title": "水平间距",
+        "type": "number"
+      },
+      "vGutterKey": {
+        "title": "垂直间距",
+        "type": "number"
+      },
+      "colCountKey": {
+        "title": "列数",
+        "type": "number"
+      }
+    },
+    "required": []
+  },
+  "data": {
+    "gutterKey": 1,
+    "vGutterKey": 1,
+    "colCountKey": 2
+  }
+}
