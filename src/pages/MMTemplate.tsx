@@ -49,7 +49,7 @@ function MMTemplate(props: MMTemplateProps) {
         return {
           name,
           id: `${TEMPLATE_ELE_ID_PREFIX}${uniqueId()}`,
-          props: c.props || data,
+          props: data,
           schema,
           snapshot,
           description

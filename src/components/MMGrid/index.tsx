@@ -1,5 +1,5 @@
 import React from 'react'
-import {Button, Col, Divider, Row} from "antd";
+import {Col, Divider, Row} from "antd";
 import style from './index.module.less'
 
 interface MMBannerProps {
@@ -58,7 +58,7 @@ function MMGrid(props: MMBannerProps) {
     <div className={style.mmGrid}>
       <Row gutter={[gutters[gutterKey], vGutters[vGutterKey]]}>{cols}</Row>
       <Divider className={style.divider} plain dashed>
-        <a className={style.add}><Icon /><span className={style.text}>添加网格列</span></a>
+        <a className={style.add}><Icon/><span className={style.text}>添加网格列</span></a>
       </Divider>
     </div>
   )

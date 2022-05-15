@@ -1,6 +1,6 @@
 {
   "name": "sadadas",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "private": true,
   "dependencies": {
     "@jiaminghi/data-view-react": "^1.2.5",
@@ -67,5 +67,5 @@
     "mumu-page-cli": "^1.0.0"
   },
   "readme": "ERROR: No README data found!",
-  "_id": "sadadas@0.1.4"
+  "_id": "sadadas@0.1.5"
 }
