@@ -24,6 +24,7 @@ export interface ShapeRef {
   setLineStyle: (top: number, width: number) => void;
 }
 
+// ref 也很慢
 function Shape(props: ShapeProps, ref: Ref<ShapeRef>) {
   const { tool } = props
   const shape = useRef<HTMLDivElement>(null)

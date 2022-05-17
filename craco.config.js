@@ -1,7 +1,7 @@
 const path = require('path')
 const CracoLessPlugin = require('craco-less')
-const {BannerPlugin} = require('webpack')
-const {BundleAnalyzerPlugin} = require('webpack-bundle-analyzer');
+const { BannerPlugin } = require('webpack')
+const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 const lessModuleRegex = /\.module\.less$/;
 const HtmlWebpackExternalsPlugin = require('html-webpack-externals-plugin')
 
@@ -35,41 +35,41 @@ module.exports = {
           {
             module: 'react',
             entry:
-              'https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js',
+              'https://unpkg.com/react@18/umd/react.production.min.js',
             global: 'React',
           },
           {
             module: 'react-dom',
             entry:
-              'https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js',
+              'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js',
             global: 'ReactDOM',
           },
           {
             module: 'moment',
-            entry: 'https://cdn.jsdelivr.net/npm/moment@2/moment.min.js',
+            entry: 'https://unpkg.com/moment@2/moment.js',
             global: 'moment',
           },
           {
             module: 'immer',
             entry:
-              'https://cdn.jsdelivr.net/npm/immer@9.0.1/dist/immer.umd.production.min.js',
+              'https://unpkg.com/immer@9.0.1/dist/immer.umd.production.min.js',
             global: 'immer',
           },
           {
             module: 'lodash',
             entry:
-              'https://cdn.jsdelivr.net/npm/lodash@4/lodash.min.js',
+              'https://unpkg.com/lodash@4/lodash.min.js',
             global: '_',
           },
           {
             module: 'antd',
-            entry: 'https://cdn.jsdelivr.net/npm/antd@4/dist/antd.min.js',
+            entry: 'https://unpkg.com/antd@4/dist/antd.min.js',
             global: 'antd',
           },
           {
             module: '@ant-design/icons',
             entry:
-              'https://cdn.jsdelivr.net/npm/@ant-design/icons@4/dist/index.umd.js',
+              'https://unpkg.com/@ant-design/icons@4/dist/index.umd.js',
             global: 'icons',
           },
           {
@@ -79,7 +79,7 @@ module.exports = {
           },
           {
             module: 'echarts',
-            entry: 'https://cdn.jsdelivr.net/npm/echarts@5.3.2/dist/echarts.min.js',
+            entry: 'https://unpkg.com/echarts@5.3.2/dist/echarts.min.js',
             global: 'echarts',
           },
         ]
@@ -91,7 +91,7 @@ Licensed under the Apache License, Version 2.0 (the 'License');`),
         analyzerMode: 'static',
         openAnalyzer: false, // 构建完打开浏览器
         reportFilename: path.resolve(__dirname, `build/analyzer.html`),
-      })
+      }),
     ]
   },
   plugins: [
@@ -124,4 +124,5 @@ Licensed under the Apache License, Version 2.0 (the 'License');`),
       ]
     ]
   },
+  devServer: {}
 }

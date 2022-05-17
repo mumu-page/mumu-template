@@ -19,6 +19,13 @@ interface MMBannerProps {
   isEdit?: boolean
 }
 
+/** 网格布局组件的添加行事件 */
+export const ON_GRID_ADD_ROW = 'onGridAddRow'
+/** 网格布局组件的选中行事件 */
+export const ON_GRID_SELECT_ITEM = 'onGridSelectItem'
+/** 网格布局组件的拖放鼠标松开事件 */
+export const ON_GRID_DROP = 'onGridDrop'
+
 const Icon = () => <svg
   viewBox="0 0 1024 1024" height="1em" width="1em"
   fill="currentColor" focusable="false"
@@ -40,15 +47,24 @@ function MMGrid(props: MMBannerProps) {
   const { gutter = 0, vGutter = 0, colCount = 3, rowCount = 1, id, onEvent, isEdit } = props
   const [cols, setCols] = useState<React.ReactElement[]>([])
   const grid = useRef<HTMLDivElement>(null)
-  const data = useRef({ index: 0 })
+  const data = useRef({ index: -1 })
 
   useEffect(() => {
-    let _cols: React.ReactElement[] = []
+    const _cols: React.ReactElement[] = []
     Array(rowCount).fill(1).forEach(() => {
       Array(colCount).fill(1).forEach((_, index) => {
         const id = index
-        _cols.push(<Col key={id} span={Math.round(24 / colCount)}>
-          <div className={`${isEdit ? style.mmDroppablePlaceholder : ''}`} data-index={index} data-id={dragID}>Column</div>
+        _cols.push(<Col
+          onClick={(e) => {
+            onClick(e, index)
+          }}
+          key={id} span={Math.round(24 / colCount)}>
+          {isEdit ?
+            <div
+              className={style.mmDroppablePlaceholder}
+              data-index={index}
+              data-id={dragID}>Column</div> :
+            <></>}
         </Col>)
       })
     })
@@ -56,7 +72,7 @@ function MMGrid(props: MMBannerProps) {
   }, [colCount, rowCount])
 
   const onAddRow = () => {
-    onEvent?.(id, 'onAddRow')
+    onEvent?.(id, ON_GRID_ADD_ROW)
   }
 
   const reset = () => {
@@ -70,16 +86,18 @@ function MMGrid(props: MMBannerProps) {
     })
   }
 
-  const onClick = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+  const onClick = (e: React.MouseEvent<HTMLDivElement, MouseEvent>, index: number) => {
     const target = e.target as HTMLElement | null
     const id = target?.dataset.id
     if (id === dragID) {
-
+      reset()
+      target?.classList.add(style.dragging)
+      onEvent?.(id, ON_GRID_SELECT_ITEM, { index })
     }
   }
   const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
     reset()
-    onEvent?.(id, 'onDragOver', { index: data.current.index })
+    onEvent?.(id, ON_GRID_DROP, { index: data.current.index })
   }
   const onDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement | null
@@ -89,15 +107,16 @@ function MMGrid(props: MMBannerProps) {
     if (id === dragID) {
       target?.classList.add(style.dragging)
       if (index) data.current.index = Number(index)
+    } else {
+      data.current.index = -1
     }
   }
   const onDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-
+    reset()
   }
 
   return (
     <div
-      onClick={isEdit ? onClick : undefined}
       onDrop={isEdit ? onDrop : undefined}
       onDragOver={isEdit ? onDragOver : undefined}
       onDragLeave={isEdit ? onDragLeave : undefined}
