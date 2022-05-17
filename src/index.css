@@ -2,26 +2,94 @@
   margin: 0;
   padding: 0;
 }
+
 img {
   vertical-align: top;
 }
 
-html,body,#root,.edit {
-  height: 100%;
-  width: 100%;
+.mm-light {
+  --mm-aux-cover-rect-dragging-color: var(--mm-brand-dragging);
+  --mm-aux-cover-rect-dropping-color: var(--mm-brand-dropping);
+  --mm-aux-free-selection-background-color: var(--mm-brand-color);
+  --mm-aux-free-selection-border-color: var(--mm-brand-color);
+  --mm-aux-insertion-color: var(--mm-brand-color);
+  --mm-aux-dashed-box-color: var(--mm-brand-color);
+  --mm-aux-dashed-box-title-color: var(--mm-gray);
+  --mm-aux-selection-box-border-color: var(--mm-brand-color);
+  --mm-aux-selection-box-color: var(--mm-gray);
+  --mm-ghost-color: var(--mm-white);
+  --mm-ghost-bg-color: var(--mm-brand-moving);
+  --mm-outline-tree-bg-color: var(--mm-white);
+  --mm-outline-tree-header-border-color: var(--mm-white-gray-light);
+  --mm-outline-tree-color: var(--mm-gray);
+  --mm-outline-tree-insertion-bg-color: var(--mm-brand-color);
+  --mm-outline-tree-node-header-color: var(--mm-gray);
+  --mm-outline-tree-node-hover-color: var(--mm-brand-color);
+  --mm-toolbar-input-color: var(--mm-gray-dark);
+  --mm-toolbar-input-bg-color: var(--mm-white);
+  --mm-toolbar-input-border-color: var(--mm-white-gray-light);
+  --mm-toolbar-input-hover-border-color: var(--mm-white-gray-light);
+  --mm-toolbar-input-handler-bg-color: var(--mm-white);
+  --mm-resize-handle-bg-color: var(--mm-white-gray-light);
+  --mm-resize-handle-hover-bg-color: var(--mm-white-gray-lighter);
+  --mm-resize-handle-color: var(--mm-gray-light);
+  --mm-resize-handle-hover-color: var(--mm-white-lighter);
+  --mm-mobile-simulator-bg-color: var(--mm-white-gray-light);
+  --mm-mobile-simulator-body-bg-color: var(--mm-white);
+  --mm-mobile-simulator-border-color: var(--mm-gray-dark);
+  --mm-responsive-simulator-bg-color: var(--mm-white);
+  --mm-pc-simulator-bg-color: var(--mm-white);
+  --mm-aux-selector-btn-color: var(--mm-white);
+  --mm-aux-selector-btn-bg-color: var(--mm-brand-color);
+  --mm-aux-selector-btn-border-color: var(--mm-brand-color);
+  --mm-aux-selector-btn-hover-color: var(--mm-white);
+  --mm-aux-selector-btn-hover-bg-color: var(--mm-brand-hovering);
+  --mm-aux-selector-btn-hover-border-color: var(--mm-brand-hovering);
+  --mm-aux-selector-btn-active-color: var(--mm-white);
+  --mm-aux-selector-btn-active-bg-color: var(--mm-brand-hovering);
+  --mm-aux-selector-btn-active-border-color: var(--mm-brand-hovering);
+  --mm-panel-border-color: var(--mm-white-gray);
+  --mm-panel-active-bg-color: var(--mm-white-gray-light);
+  --mm-resource-content-bg-color: var(--mm-white);
+  --mm-composite-panel-tabs-bg-color: var(--mm-white);
+  --mm-composite-panel-tabs-active-bg-color: var(--mm-white);
+  --mm-composite-panel-highlight-bg-color: var(--mm-white-gray-light);
+  --mm-composite-panel-tabs-color: var(--mm-gray-lighter);
+  --mm-composite-panel-tabs-hover-color: var(--mm-brand-color);
+  --mm-composite-panel-tabs-content-bg-color: var(--mm-white);
+  --mm-composite-panel-tabs-header-color: var(--mm-gray-lighter);
+  --mm-collapse-header-color: var(--mm-gray);
+  --mm-resource-item-color: var(--mm-gray);
+  --mm-resource-item-hover-border-color: var(--mm-brand-color);
+  --mm-resource-item-hover-color: var(--mm-brand-color);
+  --mm-main-panel-header-bg-color: var(--mm-white);
+  --mm-workspace-panel-bg-color: var(--mm-white-gray-light);
+  --mm-scrollbar-color: var(--mm-white-gray);
+  --mm-scrollbar-hover-color: var(--white-dn-gray-lighter);
+  --mm-empty-bg-color: var(--mm-white);
+  --mm-droppable-bg-color: var(--mm-white-gray-lighter);
+  --mm-droppable-border-color: var(--mm-white-gray-dark);
+  --mm-droppable-color: var(--mm-gray-lighter);
 }
 
-.edit {
-  overflow: auto;
-}
-
-.edit::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-  background-color: #f0f2f5;
-}
-
-.edit::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, .3);
-  /*border-radius: 5px;*/
+:root {
+  --mm-white-lighter: white;
+  --white-dn-gray-lighter: gray;
+  --mm-brand-color: #1890ff;
+  --mm-brand-hovering: #40a9ff;
+  --mm-brand-bg: rgba(118, 180, 238, 0.389);
+  --mm-brand-dragging: rgba(24, 144, 255, 0.26);
+  --mm-brand-dropping: rgba(24, 144, 255, 0.34);
+  --mm-brand-moving: rgba(24, 144, 255, 0.5);
+  --mm-white: #fff;
+  --mm-white-gray: #d9d9d9;
+  --mm-white-gray-light: #eee;
+  --mm-white-gray-lighter: #f0f0f0;
+  --mm-white-gray-dark: #aaa;
+  --mm-gray: #333;
+  --mm-gray-light: #444;
+  --mm-gray-lighter: #666;
+  --mm-gray-dark: #222;
+  --mm-black: #1a1a1a;
+  --color-lining: #f0f2f5;
 }

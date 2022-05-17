@@ -1,6 +1,7 @@
 const path = require('path')
 const CracoLessPlugin = require('craco-less')
 const {BannerPlugin} = require('webpack')
+const {BundleAnalyzerPlugin} = require('webpack-bundle-analyzer');
 const lessModuleRegex = /\.module\.less$/;
 const HtmlWebpackExternalsPlugin = require('html-webpack-externals-plugin')
 
@@ -9,41 +10,24 @@ module.exports = {
     alias: {
       "@": path.resolve('src')
     },
-    configure: (webpackConfig, {env: webpackEnv, paths}) => {
-      if (webpackEnv === 'production') {
-        webpackConfig.optimization.splitChunks = {
-          ...webpackConfig.optimization.splitChunks,
-          cacheGroups: {
-            commons: {
-              chunks: 'all',
-              // 将两个以上的chunk所共享的模块打包至commons组。
-              minChunks: 2,
-              name: 'commons',
-              priority: 80,
-            },
-            base: {
-              // 基本框架
-              chunks: 'all',
-              test: /(react|react-dom|react-dom-router)/,
-              name: 'base',
-              priority: 100,
-            },
-            // antd: {
-            //   name: 'antd',
-            //   chunks: 'all',
-            //   test: /(antd|moment|immutable\/dist|braft-finder\/dist|lodash|rc-(.*)\/es)[\\/]/,
-            //   priority: 100,
-            // },
-            // immer: {
-            //   name: 'immer',
-            //   chunks: 'all',
-            //   test: /(immer)/,
-            //   priority: 100,
-            // },
+    optimization: {
+      splitChunks: {
+        cacheGroups: {
+          commons: {
+            chunks: 'initial',
+            minChunks: 2,
+            maxInitialRequests: 5,
+            minSize: 0
           },
-        };
+          vendor: {
+            test: /node_modules/,
+            chunks: 'initial',
+            name: 'vendor',
+            priority: 10,
+            enforce: true
+          }
+        }
       }
-      return webpackConfig;
     },
     plugins: [
       new HtmlWebpackExternalsPlugin({
@@ -72,6 +56,12 @@ module.exports = {
             global: 'immer',
           },
           {
+            module: 'lodash',
+            entry:
+              'https://cdn.jsdelivr.net/npm/lodash@4/lodash.min.js',
+            global: '_',
+          },
+          {
             module: 'antd',
             entry: 'https://cdn.jsdelivr.net/npm/antd@4/dist/antd.min.js',
             global: 'antd',
@@ -94,11 +84,14 @@ module.exports = {
           },
         ]
       }),
-      new BannerPlugin(`
-mumu-template v1.0.0
+      new BannerPlugin(`mumu-template v1.0.0
 Copyright 2021-2022 the original author or authors.
-Licensed under the Apache License, Version 2.0 (the 'License');
-      `)
+Licensed under the Apache License, Version 2.0 (the 'License');`),
+      new BundleAnalyzerPlugin({
+        analyzerMode: 'static',
+        openAnalyzer: false, // 构建完打开浏览器
+        reportFilename: path.resolve(__dirname, `build/analyzer.html`),
+      })
     ]
   },
   plugins: [
@@ -119,7 +112,7 @@ Licensed under the Apache License, Version 2.0 (the 'License');
       },
     },
   ],
-  babel: {//支持装饰器
+  babel: {
     plugins: [
       [
         "import",

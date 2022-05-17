@@ -64,7 +64,8 @@
     "craco-antd": "^2.0.0",
     "craco-less": "^2.0.0",
     "html-webpack-externals-plugin": "^3.8.0",
-    "mumu-page-cli": "^1.0.0"
+    "mumu-page-cli": "^1.0.0",
+    "webpack-bundle-analyzer": "^4.5.0"
   },
   "readme": "ERROR: No README data found!",
   "_id": "sadadas@0.1.8"

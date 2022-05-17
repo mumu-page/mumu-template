@@ -1,0 +1,41 @@
+.line {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 999;
+  border: 2px solid orangered;
+  display: none;
+}
+.shape, .shapeHover {
+  display: none;
+  .top,
+  .right,
+  .bottom,
+  .left {
+    //background-color: var(--mm-brand-hovering);
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 999;
+    border: 1px solid var(--mm-brand-hovering);
+  }
+
+  .right {
+    right: 0;
+    left: auto;
+  }
+
+  .bottom {
+    bottom: 0;
+    top: auto;
+  }
+}
+
+.shapeHover {
+  .top,
+  .right,
+  .bottom,
+  .left {
+    border: 1px dashed var(--mm-brand-hovering);
+  }
+}

@@ -5,24 +5,61 @@
   "schema": {
     "type": "object",
     "properties": {
-      "gutterKey": {
+      "gutter": {
         "title": "水平间距",
-        "type": "number"
+        "type": "number",
+        "widget": "slider",
+        "min": 0,
+        "max": 48,
+        "props": {
+          "step": 8
+        },
+        "inputProps": {
+          "step": 8,
+          "disabled": true
+        }
       },
-      "vGutterKey": {
+      "vGutter": {
         "title": "垂直间距",
-        "type": "number"
+        "type": "number",
+        "widget": "slider",
+        "min": 0,
+        "max": 48,
+        "props": {
+          "step": 8
+        },
+        "inputProps": {
+          "step": 8,
+          "disabled": true
+        }
       },
-      "colCountKey": {
+      "colCount": {
         "title": "列数",
-        "type": "number"
+        "type": "number",
+        "widget": "slider",
+        "min": 1,
+        "max": 6,
+        "props": {
+          "step": 1
+        }
+      },
+      "rowCount": {
+        "title": "行数",
+        "type": "number",
+        "widget": "slider",
+        "min": 1,
+        "max": 6,
+        "props": {
+          "step": 1
+        }
       }
     },
     "required": []
   },
   "data": {
-    "gutterKey": 1,
-    "vGutterKey": 1,
-    "colCountKey": 2
+    "gutter": 0,
+    "vGutter": 0,
+    "colCount": 3,
+    "rowCount": 1
   }
 }

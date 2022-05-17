@@ -1,5 +1,6 @@
 .mmGrid {
   overflow: hidden;
+
   .mmDroppablePlaceholder {
     height: 60px;
     background-color: #f0f0f0;
@@ -11,22 +12,37 @@
     font-weight: lighter;
     font-size: 13px;
   }
+  .dragging {
+    background-color: #2f8fe9a8;;
+  }
+
   :global {
     .ant-divider-horizontal.ant-divider-with-text {
       margin: 8px 0;
       font-size: 12px;
     }
+
+    .ant-col-5 {
+      display: block;
+      flex: 0 0 20%;
+      max-width: 20%;
+    }
   }
+
   .divider {
     display: flex;
     align-items: center;
+
     .add {
       display: flex;
       align-items: center;
       color: rgba(0, 0, 0, 0.45);
+      user-select: none;
+
       &:hover {
         color: #1890ff;
       }
+
       .text {
         margin-left: 5px;
       }

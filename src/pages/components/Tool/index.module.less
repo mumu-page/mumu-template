@@ -1,0 +1,32 @@
+.tool {
+  position: absolute;
+  top: -29px;
+  right: 0;
+  z-index: 999;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  height: 24px;
+  padding: 0 3px;
+  &.isTop{
+    bottom: 0;
+    top: auto;
+  }
+  &.isBottom{
+    top: -29px;
+    bottom: auto;
+  }
+  .moveUp,
+  .moveDown,
+  .copy,
+  .delete {
+    margin-left: 5px;
+  }
+  .moveUp {
+
+  }
+  .copy {}
+  .moveDown {}
+  .delete {}
+}
