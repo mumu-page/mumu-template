@@ -1,14 +1,12 @@
 import React, { useCallback, useEffect, useRef } from 'react'
 import { baseUrl, config, isEdit as _isEdit, isPreview, pageId, postMsgToParent, xhrGet, } from '@/utils/utils'
-import MMRemoteComponentLoader from "./MMRemoteComponentLoader";
-import MMBanner from "@/components/MMBanner";
-import MMBarChart3D from "@/components/MMBarChart3D";
-import { upperFirst, camelCase, kebabCase } from 'lodash'
+import { kebabCase } from 'lodash'
 import { useImmer, } from "use-immer";
-import MMGrid, { ON_GRID_DRAG_LEAVE, ON_GRID_DRAG_OVER, ON_GRID_DROP } from "@/components/MMGrid";
+import { dragID, ON_GRID_DRAG_LEAVE, ON_GRID_DRAG_OVER, ON_GRID_DROP } from "@/components/MMGrid";
 import Tool, { ToolRef } from './components/Tool';
 import Shape, { ShapeRef } from './components/Shape';
 import { ElementStyle, getElementPosition, getScrollTop, isTopOrBottom, RefData, SORT_COMPONENT, State, TEMPLATE_ELE_ID_PREFIX, SET_CURRENTCOMPONENT, COPY_COMPONENT, DELETE_COMPONENT, ADD_COMPONENT } from './utils';
+import { renderComponents } from '@/components/mapping';
 import style from "./index.module.less";
 
 declare global {
@@ -17,25 +15,9 @@ declare global {
   }
 }
 
-interface Component {
-  id: string
-  name: string
-  props: Record<string, string | number | object>
-  schema: any
-  config?: any
-  children?: Component[]
-}
-
 interface MMTemplateProps {
   children: React.ReactNode[]
   init?: (a: any) => void
-}
-
-const ComponentList = {
-  MMRemoteComponentLoader,
-  MMBanner,
-  MMBarChart3D,
-  MMGrid,
 }
 
 function MMTemplate(props: MMTemplateProps) {
@@ -92,7 +74,7 @@ function MMTemplate(props: MMTemplateProps) {
   })
   const shape = useRef<ShapeRef>(null)
   const tool = useRef<ToolRef>(null)
-
+  
   /**
    * 设置组件
    * @param config
@@ -188,15 +170,17 @@ function MMTemplate(props: MMTemplateProps) {
   }
 
   const handleDragEvent = (e: any, node: HTMLElement) => {
-    const { top, bottom, width } = node.getBoundingClientRect()
     if (!shape.current) return
+    if (staticData.current.isGridAdd) return
+    const parentElement = e.target.parentElement?.parentElement
+    const id = parentElement?.dataset?.id
+    if(id === dragID) return
+    const { top, bottom, width } = node.getBoundingClientRect()
     const type = isTopOrBottom(e, node)
     if (type === 'top') {
-      if (staticData.current.isGridAdd) return
       shape.current?.setLineStyle(top - 2, width)
     } else {
       staticData.current.hoverCurrent = staticData.current.hoverCurrent + 1
-      if (staticData.current.isGridAdd) return
       shape.current?.setLineStyle(bottom - 2, width)
     }
   }
@@ -361,30 +345,7 @@ function MMTemplate(props: MMTemplateProps) {
     postMsgToParent({ type: SET_CURRENTCOMPONENT, data: { currentIndex: staticData.current.current } })
   }
 
-  const renderComponent = (components: Component[]) => {
-    return components.map((component) => {
-      const Result = (ComponentList as any)[upperFirst(camelCase(component.name)).replace('Mm', 'MM')]
-      if (!Result) return null
-      return <div
-        data-layout={component.props && component.props._layout}
-        data-id={component.id}
-        key={component.id}
-      >
-        {React.createElement(
-          Result,
-          {
-            ...(component.props || {}),
-            id: component.id,
-            config: component.config,
-            onRemoteComponentLoad,
-            onEvent,
-            isEdit: state.isEdit
-          },
-          renderComponent(component.children || [])
-        )}
-      </div>
-    })
-  }
+
 
   useEffect(() => {
     if (!state.isEdit) return;
@@ -423,7 +384,7 @@ function MMTemplate(props: MMTemplateProps) {
     }
   }, [])
 
-  if (!state.isEdit) return <>{renderComponent(state.components)}</>
+  if (!state.isEdit) return <>{renderComponents(state.components, onRemoteComponentLoad, onEvent, state.isEdit)}</>
 
   return (
     <div
@@ -440,7 +401,7 @@ function MMTemplate(props: MMTemplateProps) {
         ref={sliderView}
         className={style.sliderView}
       >
-        {renderComponent(state.components)}
+        {renderComponents(state.components, onRemoteComponentLoad, onEvent, state.isEdit)}
       </div>
       <Shape ref={shape} tool={
         <Tool

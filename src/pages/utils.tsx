@@ -54,6 +54,15 @@ export interface ElementStyle {
   height: number
 }
 
+export interface Component {
+  id: string
+  name: string
+  props: Record<string, string | number | object>
+  schema: any
+  config?: any
+  children?: Component[]
+}
+
 /**
  * 偏移值，如果滚动条存在则减去滚动条宽度
  * @returns 

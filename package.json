@@ -29,7 +29,7 @@
   "scripts": {
     "start": "craco start",
     "build": "craco build",
-    "postbuild": "copy.sh",
+    "postbuild": "sh copy.sh",
     "test": "craco test",
     "release": "mumu release",
     "eject": "react-scripts eject"

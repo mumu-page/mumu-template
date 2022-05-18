@@ -8,7 +8,7 @@ function App() {
   return (
     <div className='mm-light'>
       <MMTemplate>
-        <MMGrid />
+        <MMGrid onEvent={() => { }} onRemoteComponentLoad={() => { }} />
         <MMBanner
           src={'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png'}
         />
@@ -21,12 +21,13 @@ function App() {
         <MMBanner
           src={'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png'}
         />
-        <MMGrid />
-        <MMGrid />
-        <MMGrid />
-        <MMGrid />
-        <MMGrid />
-        <MMBarChart3D backgroundColor={""} color={[]}/>
+        <MMGrid onEvent={() => { }} onRemoteComponentLoad={() => { }} />
+        <MMGrid onEvent={() => { }} onRemoteComponentLoad={() => { }} />
+        <MMGrid onEvent={() => { }} onRemoteComponentLoad={() => { }} />
+        <MMGrid onEvent={() => { }} onRemoteComponentLoad={() => { }} />
+        <MMGrid onEvent={() => { }} onRemoteComponentLoad={() => { }} />
+        <MMGrid onEvent={() => { }} onRemoteComponentLoad={() => { }} />
+        <MMBarChart3D backgroundColor={""} color={[]} />
       </MMTemplate>
     </div>
   );
