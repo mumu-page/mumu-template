@@ -5,16 +5,25 @@ import MMBanner from "@/components/MMBanner";
 import MMBarChart3D from "@/components/MMBarChart3D";
 import { upperFirst, camelCase, kebabCase } from 'lodash'
 import { useImmer, } from "use-immer";
-import MMGrid from "@/components/MMGrid";
+import MMGrid, { ON_GRID_DRAG_LEAVE, ON_GRID_DRAG_OVER, ON_GRID_DROP } from "@/components/MMGrid";
 import Tool, { ToolRef } from './components/Tool';
 import Shape, { ShapeRef } from './components/Shape';
-import { ElementStyle, getElementPosition, getScrollTop, isTopOrBottom, RefData, SORT_COMPONENT, State, TEMPLATE_ELE_ID_PREFIX, SET_CURRENTCOMPONENT, COPY_COMPONENT, DELETE_COMPONENT } from './utils';
+import { ElementStyle, getElementPosition, getScrollTop, isTopOrBottom, RefData, SORT_COMPONENT, State, TEMPLATE_ELE_ID_PREFIX, SET_CURRENTCOMPONENT, COPY_COMPONENT, DELETE_COMPONENT, ADD_COMPONENT } from './utils';
 import style from "./index.module.less";
 
 declare global {
   interface Window {
     __mm_config__: any
   }
+}
+
+interface Component {
+  id: string
+  name: string
+  props: Record<string, string | number | object>
+  schema: any
+  config?: any
+  children?: Component[]
 }
 
 interface MMTemplateProps {
@@ -78,7 +87,8 @@ function MMTemplate(props: MMTemplateProps) {
     mutationObserver: null,
     preTop: 0,
     nextTop: 0,
-    timer: null
+    timer: null,
+    isGridAdd: false
   })
   const shape = useRef<ShapeRef>(null)
   const tool = useRef<ToolRef>(null)
@@ -160,6 +170,20 @@ function MMTemplate(props: MMTemplateProps) {
    * @param data 
    */
   const onEvent = (id: string | undefined | null, type: string, data: any) => {
+    if (type === ON_GRID_DRAG_OVER) {
+      staticData.current.isGridAdd = true
+      shape.current?.hideLine()
+    }
+    if (type === ON_GRID_DRAG_LEAVE) {
+      staticData.current.isGridAdd = false
+      shape.current?.showLine()
+    }
+    if (type === ON_GRID_DROP) {
+      staticData.current.isGridAdd = true
+      shape.current?.hideLine()
+    }
+    // 排除会频繁触发的事件    
+    if ([ON_GRID_DRAG_OVER, ON_GRID_DRAG_LEAVE].includes(type)) return
     postMsgToParent({ type: "onEvent", data: { id, type, data } })
   }
 
@@ -168,10 +192,12 @@ function MMTemplate(props: MMTemplateProps) {
     if (!shape.current) return
     const type = isTopOrBottom(e, node)
     if (type === 'top') {
+      if (staticData.current.isGridAdd) return
       shape.current?.setLineStyle(top - 2, width)
     } else {
-      shape.current?.setLineStyle(bottom - 2, width)
       staticData.current.hoverCurrent = staticData.current.hoverCurrent + 1
+      if (staticData.current.isGridAdd) return
+      shape.current?.setLineStyle(bottom - 2, width)
     }
   }
 
@@ -282,10 +308,12 @@ function MMTemplate(props: MMTemplateProps) {
     shape.current?.hideLine()
   }
   const onDrop: React.DragEventHandler<HTMLDivElement> = (e) => {
+    e.preventDefault()
+    if (staticData.current.isGridAdd) return
     shape.current?.hideLine()
     const data = e?.dataTransfer?.getData('text/plain')
     if (data != null) {
-      postMsgToParent({ type: 'addComponent', data: { data: JSON.parse(data), index: staticData.current.hoverCurrent } })
+      postMsgToParent({ type: ADD_COMPONENT, data: { data: JSON.parse(data), index: staticData.current.hoverCurrent } })
     }
     // 重置样式
     staticData.current.current = staticData.current.hoverCurrent
@@ -333,8 +361,8 @@ function MMTemplate(props: MMTemplateProps) {
     postMsgToParent({ type: SET_CURRENTCOMPONENT, data: { currentIndex: staticData.current.current } })
   }
 
-  const renderComponent = () => {
-    return state.components.map((component: { name: any; props: any; config: any; id: any }) => {
+  const renderComponent = (components: Component[]) => {
+    return components.map((component) => {
       const Result = (ComponentList as any)[upperFirst(camelCase(component.name)).replace('Mm', 'MM')]
       if (!Result) return null
       return <div
@@ -342,14 +370,18 @@ function MMTemplate(props: MMTemplateProps) {
         data-id={component.id}
         key={component.id}
       >
-        {React.createElement(Result, {
-          ...(component.props || {}),
-          id: component.id,
-          config: component.config,
-          onRemoteComponentLoad,
-          onEvent,
-          isEdit: state.isEdit
-        })}
+        {React.createElement(
+          Result,
+          {
+            ...(component.props || {}),
+            id: component.id,
+            config: component.config,
+            onRemoteComponentLoad,
+            onEvent,
+            isEdit: state.isEdit
+          },
+          renderComponent(component.children || [])
+        )}
       </div>
     })
   }
@@ -391,7 +423,7 @@ function MMTemplate(props: MMTemplateProps) {
     }
   }, [])
 
-  if (!state.isEdit) return <>{renderComponent()}</>
+  if (!state.isEdit) return <>{renderComponent(state.components)}</>
 
   return (
     <div
@@ -408,7 +440,7 @@ function MMTemplate(props: MMTemplateProps) {
         ref={sliderView}
         className={style.sliderView}
       >
-        {renderComponent()}
+        {renderComponent(state.components)}
       </div>
       <Shape ref={shape} tool={
         <Tool

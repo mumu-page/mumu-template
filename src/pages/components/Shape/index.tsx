@@ -21,6 +21,7 @@ export interface ShapeRef {
   hideShape: () => void;
   hideShapeHover: () => void;
   hideLine: () => void;
+  showLine: () => void;
   setLineStyle: (top: number, width: number) => void;
 }
 
@@ -95,12 +96,18 @@ function Shape(props: ShapeProps, ref: Ref<ShapeRef>) {
     line.current.style.display = 'none'
   }
 
+  const showLine = () => {
+    if (!line.current) return
+    line.current.style.display = 'block'
+  }
+
   useImperativeHandle(ref, () => ({
     setShapeStyle,
     setShapeHoverStyle,
     hideShape,
     hideShapeHover,
     hideLine,
+    showLine,
     setLineStyle
   }), [])
 

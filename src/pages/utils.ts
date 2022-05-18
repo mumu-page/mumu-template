@@ -41,6 +41,7 @@ export interface RefData {
   mutationObserver: MutationObserver | null
   preTop: number;
   nextTop: number;
+  isGridAdd: boolean;
   timer: NodeJS.Timeout | null;
 }
 

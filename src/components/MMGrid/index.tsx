@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { Col, Divider, Row } from "antd";
+import { Col, Divider, Row, message } from "antd";
+import config from './package.json'
+import { uniqueId } from 'lodash';
 import style from './index.module.less'
 
 interface MMBannerProps {
@@ -17,6 +19,7 @@ interface MMBannerProps {
   onEvent?: (id: string | undefined, type: string, data?: any) => void
   /* 是否编辑 */
   isEdit?: boolean
+  children?: React.ReactNode[]
 }
 
 /** 网格布局组件的添加行事件 */
@@ -25,6 +28,10 @@ export const ON_GRID_ADD_ROW = 'onGridAddRow'
 export const ON_GRID_SELECT_ITEM = 'onGridSelectItem'
 /** 网格布局组件的拖放鼠标松开事件 */
 export const ON_GRID_DROP = 'onGridDrop'
+/** 网格布局组件的拖放鼠标移开事件 */
+export const ON_GRID_DRAG_LEAVE = 'onDragLeave'
+/** 网格布局组件的拖放鼠标移动到元素上的事件 */
+export const ON_GRID_DRAG_OVER = 'onDragOver'
 
 const Icon = () => <svg
   viewBox="0 0 1024 1024" height="1em" width="1em"
@@ -44,37 +51,19 @@ const Icon = () => <svg
 const dragID = 'mmDroppablePlaceholder'
 
 function MMGrid(props: MMBannerProps) {
-  const { gutter = 0, vGutter = 0, colCount = 3, rowCount = 1, id, onEvent, isEdit } = props
+  const { gutter = 0, vGutter = 0, colCount = 3, rowCount = 1, id, onEvent, isEdit, children } = props
   const [cols, setCols] = useState<React.ReactElement[]>([])
   const grid = useRef<HTMLDivElement>(null)
-  const data = useRef({ index: -1 })
-
-  useEffect(() => {
-    const _cols: React.ReactElement[] = []
-    Array(rowCount).fill(1).forEach(() => {
-      Array(colCount).fill(1).forEach((_, index) => {
-        const id = index
-        _cols.push(<Col
-          onClick={(e) => {
-            onClick(e, index)
-          }}
-          key={id} span={Math.round(24 / colCount)}>
-          {isEdit ?
-            <div
-              className={style.mmDroppablePlaceholder}
-              data-index={index}
-              data-id={dragID}>Column</div> :
-            <></>}
-        </Col>)
-      })
-    })
-    setCols(_cols)
-  }, [colCount, rowCount])
+  const data = useRef({ row: -1, col: -1 })
+  console.log('children', children);
 
   const onAddRow = () => {
+    if (rowCount >= config.schema.properties.rowCount.max) {
+      message.info(`不能再添加啦~`)
+      return
+    }
     onEvent?.(id, ON_GRID_ADD_ROW)
   }
-
   const reset = () => {
     const childNodes = grid.current?.childNodes as any
     Array.from(childNodes).forEach((node: any) => {
@@ -85,35 +74,88 @@ function MMGrid(props: MMBannerProps) {
       }
     })
   }
-
-  const onClick = (e: React.MouseEvent<HTMLDivElement, MouseEvent>, index: number) => {
+  const onClick = (e: React.MouseEvent<HTMLDivElement, MouseEvent>, row: number, col: number) => {
     const target = e.target as HTMLElement | null
-    const id = target?.dataset.id
-    if (id === dragID) {
+    const _id = target?.dataset.id
+    if (_id === dragID) {
       reset()
       target?.classList.add(style.dragging)
-      onEvent?.(id, ON_GRID_SELECT_ITEM, { index })
+      onEvent?.(id, ON_GRID_SELECT_ITEM, { row, col })
     }
   }
   const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
     reset()
-    onEvent?.(id, ON_GRID_DROP, { index: data.current.index })
+    const target = e.target as HTMLElement | null
+    const _id = target?.dataset.id
+    const row = target?.dataset.row
+    const col = target?.dataset.col
+    if (_id === dragID) {
+      onEvent?.(id, ON_GRID_DROP, { row, col })
+    }
   }
   const onDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
     const target = e.target as HTMLElement | null
-    const id = target?.dataset.id
-    const index = target?.dataset.index
+    const _id = target?.dataset.id
+    const row = target?.dataset.row
+    const col = target?.dataset.col
     reset()
-    if (id === dragID) {
+    if (_id === dragID) {
       target?.classList.add(style.dragging)
-      if (index) data.current.index = Number(index)
+      if (row) data.current.row = Number(row)
+      if (col) data.current.col = Number(col)
+      onEvent?.(id, ON_GRID_DRAG_OVER, { row, col })
     } else {
-      data.current.index = -1
+      data.current.row = -1
+      data.current.col = -1
+      onEvent?.(id, ON_GRID_DRAG_LEAVE)
     }
   }
   const onDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     reset()
+    onEvent?.(id, ON_GRID_DRAG_LEAVE)
   }
+  const getItem = (row: number, col: number) => {
+    const map = {} as any
+    let _row = 0
+    children?.forEach((node, index) => {
+      const col = index % colCount
+      if (index < colCount) {
+        _row = 0
+      } else if (col === 0) {
+        _row++
+      }
+      map[`${_row},${col},${index}`] = node
+    })
+    // console.log('map', map);
+    if (map[`${row},${col}`]) return map[`${row},${col}`]
+    return 'Column'
+  }
+
+  useEffect(() => {
+    const _cols: React.ReactElement[] = []
+    Array(rowCount).fill(1).forEach((_, row) => {
+      Array(colCount).fill(1).forEach((_, col) => {
+        const id = uniqueId()
+        _cols.push(<Col
+          onClick={(e) => {
+            onClick(e, row, col)
+          }}
+          key={id}
+          span={Math.round(24 / colCount)}>
+          {isEdit ?
+            <div
+              className={style.mmDroppablePlaceholder}
+              data-row={row}
+              data-col={col}
+              data-id={dragID}>{getItem(row, col)}</div> :
+            <></>}
+        </Col>)
+      })
+    })
+    setCols(_cols)
+  }, [colCount, rowCount])
 
   return (
     <div
