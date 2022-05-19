@@ -10,8 +10,6 @@ function App() {
     <div className='mm-light'>
       <MMTemplate>
         <MMGridLayout onEvent={() => { }} onRemoteComponentLoad={() => { }} />
-        <MMGrid onEvent={() => { }} onRemoteComponentLoad={() => { }} />
-        
         <MMBanner
           src={'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png'}
         />

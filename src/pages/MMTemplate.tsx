@@ -75,7 +75,7 @@ function MMTemplate(props: MMTemplateProps) {
   })
   const shape = useRef<ShapeRef>(null)
   const tool = useRef<ToolRef>(null)
-  
+
   /**
    * 设置组件
    * @param config
@@ -175,7 +175,7 @@ function MMTemplate(props: MMTemplateProps) {
     if (staticData.current.isGridAdd) return
     const parentElement = e.target.parentElement?.parentElement
     const id = parentElement?.dataset?.id
-    if(id === dragID) return
+    if (id === dragID) return
     const { top, bottom, width } = node.getBoundingClientRect()
     const type = isTopOrBottom(e, node)
     if (type === 'top') {
@@ -346,8 +346,6 @@ function MMTemplate(props: MMTemplateProps) {
     postMsgToParent({ type: SET_CURRENTCOMPONENT, data: { currentIndex: staticData.current.current } })
   }
 
-
-
   useEffect(() => {
     if (!state.isEdit) return;
     window.addEventListener('message', onMessage);
@@ -380,8 +378,11 @@ function MMTemplate(props: MMTemplateProps) {
   useEffect(() => {
     document.title = state.page.projectName
     window.addEventListener('resize', onResize)
+    const resizeObserver = new ResizeObserver(computedShapeAndToolStyle)
+    sliderView.current && resizeObserver.observe(sliderView.current)
     return () => {
       window.removeEventListener('resize', onResize)
+      resizeObserver.disconnect()
     }
   }, [])
 

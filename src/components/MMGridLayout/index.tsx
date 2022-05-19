@@ -1,12 +1,12 @@
-import React, { memo, useEffect, useRef } from 'react'
+import React, { memo, useCallback, useEffect, useRef } from 'react'
 import _ from "lodash";
-import RGL, { WidthProvider, Layout, Responsive } from "react-grid-layout";
+import RGL, { WidthProvider, Layout } from "react-grid-layout";
 import { useImmer } from 'use-immer';
 import { Component, gridComponents, gridRenderComponent } from '../gridMapping';
 import { Divider } from 'antd';
 import style from './index.module.less'
 
-const ResponsiveGridLayout = WidthProvider(Responsive);
+const GridLayout = WidthProvider(RGL);
 
 interface MMBannerProps {
   /* 组件ID */
@@ -25,6 +25,7 @@ interface MMBannerProps {
   /* 是否编辑 */
   isEdit?: boolean
   children?: Component[]
+  layout?: RGL.Layout[]
 }
 
 const Icon = () => <svg
@@ -70,28 +71,28 @@ export const ON_GRID_DROP = 'onGridDrop'
 export const ON_GRID_DRAG_LEAVE = 'onDragLeave'
 /** 网格布局组件的拖放鼠标移动到元素上的事件 */
 export const ON_GRID_DRAG_OVER = 'onDragOver'
+/** 网格布局组件的布局改变事件 */
+export const ON_GRID_LAYOUT_CHANGE = 'onLayoutChange'
 
 interface State {
   mounted: boolean,
-  rowHeight: number,
-  layouts: RGL.Layouts
 }
 
 function MMGridLayout(props: MMBannerProps) {
   const { gutter = 0, vGutter = 0, colCount = 3, rowCount = 3, id, onEvent, isEdit, children, onRemoteComponentLoad } = props
   const [state, setState] = useImmer<State>({
     mounted: false,
-    rowHeight: 60,
-    layouts: { lg: generateLayout(colCount, rowCount, !isEdit) }
   })
+  const defaultLayout = generateLayout(colCount, rowCount, !isEdit)
+  const { layout = defaultLayout } = props
   const grid = useRef<HTMLDivElement>(null)
   const data = useRef({ index: -1 })
-
+  const rowHeight = 60
   const generateDOM = () => {
-    return _.map(_.range(rowCount * colCount), function (_, i) {
+    return _.map(layout, function (_, i) {
       return (
         <div key={i}>
-          {getItem(i)}
+          {getItem(+i)}
         </div>
       );
     });
@@ -107,39 +108,54 @@ function MMGridLayout(props: MMBannerProps) {
       return <div
         className={style.mmDroppablePlaceholder}
         data-index={index}
-        data-id={dragID}>{columnElement || <span>Column</span>}</div>
+        data-id={dragID}>{columnElement || <p>Column-{index}</p>}</div>
     }
     return <>{columnElement}</>
   }
 
-  const onLayoutChange = (_: RGL.Layout[], allLayouts: RGL.Layouts) => {
-    setState(drgft => {
-      drgft.layouts = allLayouts
+  const onLayoutChange = (layout: RGL.Layout[]) => {
+    onEvent(id, ON_GRID_LAYOUT_CHANGE, { ...props, layout })
+  }
+
+  const onAddCol = () => {
+    onEvent?.(id, ON_GRID_ADD_ROW, {
+      ...props, layout: [...layout, {
+        i: "n" + colCount * rowCount + 1,
+        x: (layout.length * 2) % (colCount * 4),
+        y: Infinity, // puts it at the bottom
+        w: Infinity,
+        h: 1
+      }]
     })
   }
 
-  const onAddRow = () => {
-    setState(drgft => {
-      drgft.layouts.lg = generateLayout(colCount, rowCount + 1, !isEdit)
-    })
+  const findMaxHeight = () => {
+    const childNodes = (grid.current as any)?.childNodes?.[0]?.childNodes as any
+    try {
+      Array.from(childNodes).forEach((node: any, index: number) => {
+        if (!node?.childNodes) return
+        const com = node?.childNodes?.[0]?.childNodes?.[0]
+        const height = com?.getBoundingClientRect().height || 0
+        if (height > rowHeight) {
+          const multiple = Math.ceil(height / 60)
+          layout.forEach((item, i) => {
+            if (index === i) {
+              item.h = multiple
+            }
+          })
+          onEvent(id, ON_GRID_LAYOUT_CHANGE, { ...props, layout })
+        }
+      })
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   const reset = () => {
     const childNodes = (grid.current as any)?.childNodes?.[0]?.childNodes as any
-    console.log('childNodes', childNodes);
     try {
       Array.from(childNodes).forEach((node: any) => {
         if (!node?.childNodes) return
-        // 已经添加过得元素
-        const com = node?.childNodes?.[0]?.childNodes?.[0]
-        const height = com?.getBoundingClientRect().height || 0
-        console.log('com', com);
-        console.log('height', height);
-        if (height > state.rowHeight) {
-          // setState(drft => {
-          //   drft.rowHeight = height
-          // })
-        }
         const _c = Array.from(node?.childNodes) as any
         if (_c) {
           _c?.[0]?.classList.remove(style.dragging)
@@ -159,6 +175,9 @@ function MMGridLayout(props: MMBannerProps) {
     const index = target?.dataset.index
     if (_id === dragID) {
       onEvent?.(id, ON_GRID_DROP, { index, dragData })
+      requestIdleCallback(() => {
+        findMaxHeight()
+      })
     }
   }
   const onDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -182,10 +201,25 @@ function MMGridLayout(props: MMBannerProps) {
   }
 
   useEffect(() => {
-    setState(drgft => {
-      drgft.layouts = { lg: generateLayout(colCount, rowCount, false) }
-    })
+    onEvent(id, ON_GRID_LAYOUT_CHANGE, { ...props, layout: generateLayout(colCount, rowCount, !isEdit) })
   }, [colCount, rowCount])
+
+  const onResize = (layout: Layout[], oldItem: Layout, newItem: Layout, placeholder: Layout) => {
+    requestIdleCallback(() => {
+      findMaxHeight()
+    })
+  }
+
+  const winResize = useCallback(() => {
+    onEvent(id, ON_GRID_LAYOUT_CHANGE, { ...props, layout: generateLayout(colCount, rowCount, !isEdit) })
+  }, [])
+
+  useEffect(() => {
+    window.addEventListener('resize', winResize)
+    return () => {
+      window.removeEventListener('resize', winResize)
+    }
+  }, [])
 
   return (
     <div
@@ -194,20 +228,20 @@ function MMGridLayout(props: MMBannerProps) {
       onDrop={onDrop}
       onDragLeave={onDragLeave}
       onDragOver={onDragOver}>
-      <ResponsiveGridLayout
-        layouts={state.layouts}
-        rowHeight={state.rowHeight}
+      <GridLayout
+        layout={layout}
+        rowHeight={rowHeight}
         margin={[gutter, vGutter]}
         isDraggable={isEdit}
         containerPadding={[0, 0]}
         onLayoutChange={onLayoutChange}
-        breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-        cols={{ lg: 4 * colCount, md: 4 * colCount, sm: 4 * colCount, xs: 4 * colCount, xxs: 1 }}
+        onResize={onResize}
+        cols={colCount * 4}
       >
         {generateDOM()}
-      </ResponsiveGridLayout>
+      </GridLayout>
       {isEdit && <Divider className={style.divider} plain dashed>
-        <a className={style.add}><Icon /><span className={style.text} onClick={onAddRow}>添加网格列</span></a>
+        <a className={style.add}><Icon /><span className={style.text} onClick={onAddCol}>添加网格列</span></a>
       </Divider>}
     </div>
   );
