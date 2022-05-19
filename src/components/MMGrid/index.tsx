@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { memo, useEffect, useRef, useState } from 'react'
 import { Col, Divider, Row, message } from "antd";
 import config from './package.json'
 import { uniqueId } from 'lodash';
-import style from './index.module.less'
 import { gridComponents, Component, gridRenderComponent } from '../gridMapping';
+import style from './index.module.less'
 /**
  * 转换行、列为索引 row,col ==> index
  * @param data 
@@ -75,6 +75,7 @@ const Icon = () => <svg
 
 export const dragID = 'mmDroppablePlaceholder'
 
+// 跨列跨行
 function MMGrid(props: MMBannerProps) {
   const { gutter = 0, vGutter = 0, colCount = 3, rowCount = 1, id, onEvent, isEdit, children, onRemoteComponentLoad } = props
   const [cols, setCols] = useState<React.ReactElement[]>([])
@@ -145,7 +146,7 @@ function MMGrid(props: MMBannerProps) {
   }
   const getItem = (row: number, col: number) => {
     const index = getIndexByRowAndCol(Array(rowCount * colCount).fill(1), colCount, +row, +col)
-    let columnElement: string | React.ReactNode = 'Column'
+    let columnElement: string | React.ReactNode
     const item = children ? children[index] : null
     if (item && item.name !== 'grid-placeholder') {
       columnElement = gridRenderComponent(item, gridComponents, onRemoteComponentLoad, onEvent, isEdit)
@@ -155,7 +156,7 @@ function MMGrid(props: MMBannerProps) {
         className={style.mmDroppablePlaceholder}
         data-row={row}
         data-col={col}
-        data-id={dragID}>{columnElement}</div>
+        data-id={dragID}>{columnElement || 'Column'}</div>
     }
     return <>{columnElement}</>
   }
@@ -185,13 +186,13 @@ function MMGrid(props: MMBannerProps) {
       onDragLeave={isEdit ? onDragLeave : undefined}
       className={style.mmGrid}>
       <Row ref={grid} gutter={[gutter, vGutter]}>{cols}</Row>
-      <Divider className={style.divider} plain dashed>
-        <a className={style.add}><Icon /><span className={style.text} onClick={onAddRow}>添加网格列</span></a>
-      </Divider>
+      {isEdit && <Divider className={style.divider} plain dashed>
+        <a className={style.add}><Icon /><span className={style.text} onClick={onAddRow}>添加网格行</span></a>
+      </Divider>}
     </div>
   )
 }
 
 MMGrid.componentName = 'MMGrid'
 
-export default MMGrid
+export default memo(MMGrid)

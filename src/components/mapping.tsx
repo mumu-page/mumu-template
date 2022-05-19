@@ -1,9 +1,11 @@
 import { gridComponents, gridRenderComponent } from "./gridMapping";
 import MMGrid from "./MMGrid";
+import MMGridLayout from "./MMGridLayout";
 
 export const rootComponents = {
   ...gridComponents,
   MMGrid,
+  MMGridLayout
 }
 
 export interface Component {

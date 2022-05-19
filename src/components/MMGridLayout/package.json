@@ -1,6 +1,6 @@
 {
-  "name": "mm-grid",
-  "description": "网格布局",
+  "name": "mm-grid-layout",
+  "description": "网格布局Pro",
   "snapshot": "https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png",
   "schema": {
     "type": "object",
@@ -60,6 +60,6 @@
     "gutter": 8,
     "vGutter": 8,
     "colCount": 3,
-    "rowCount": 1
+    "rowCount": 3
   }
 }

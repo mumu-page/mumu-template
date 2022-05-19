@@ -25,7 +25,8 @@ function MMTemplate(props: MMTemplateProps) {
     return window.__mm_config__.components.length // window.__mm_config__.components 是服务端注入的用户选择组件
       ? window.__mm_config__.components.map((item: any, index: number) => ({ ...item, id: `${TEMPLATE_ELE_ID_PREFIX}${index}_config` }))
       : props.children.map((c: any, index: number) => {
-        const name = kebabCase(c.type.componentName);
+        const customName = c.type.componentName || c.type.type.componentName
+        const name = kebabCase(customName);
         const { data, schema, snapshot, description } = config.componentConfig.filter(config => config.name === name)?.[0] || {};
         return {
           name,
