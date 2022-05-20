@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef } from 'react'
 import { baseUrl, config, isEdit as _isEdit, isPreview, pageId, postMsgToParent, xhrGet, } from '@/utils/utils'
 import { kebabCase } from 'lodash'
 import { useImmer, } from "use-immer";
-import { dragID, ON_GRID_DRAG_LEAVE, ON_GRID_DRAG_OVER, ON_GRID_DROP } from "@/components/MMGrid";
+import { dragID, ON_GRID_DRAG_LEAVE, ON_GRID_DRAG_OVER, ON_GRID_DROP } from "@/components/MMGridAnt";
 import Tool, { ToolRef } from './components/Tool';
 import Shape, { ShapeRef } from './components/Shape';
 import { ElementStyle, getElementPosition, getScrollTop, isTopOrBottom, RefData, SORT_COMPONENT, State, TEMPLATE_ELE_ID_PREFIX, SET_CURRENTCOMPONENT, COPY_COMPONENT, DELETE_COMPONENT, ADD_COMPONENT } from './utils';

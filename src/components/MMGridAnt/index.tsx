@@ -1,11 +1,32 @@
 import React, { memo, useEffect, useRef, useState } from 'react'
-import { Divider, message } from "antd";
+import { Col, Divider, Row, message } from "antd";
 import config from './package.json'
 import { uniqueId } from 'lodash';
 import { gridComponents, Component, gridRenderComponent } from '../gridMapping';
 import style from './index.module.less'
-import Grid from './Grid';
-import Cell, { ICell } from './Cell';
+/**
+ * 转换行、列为索引 row,col ==> index
+ * @param data 
+ * @param colCount 
+ * @param row 
+ * @param col 
+ * @returns 
+ */
+function getIndexByRowAndCol(data: any[], colCount: number, row: number, col: number) {
+  const map = {} as any
+  let _row = 0
+  data.forEach((_, index) => {
+    const _col = index % colCount
+    if (index < colCount) {
+      _row = 0
+    } else if (_col === 0) {
+      _row++
+    }
+    map[`${_row},${_col}`] = index
+  })
+  const index = map[`${row},${col}`]
+  return typeof index === 'number' ? index : -1
+}
 
 interface MMBannerProps {
   /* 组件ID */
@@ -24,7 +45,6 @@ interface MMBannerProps {
   /* 是否编辑 */
   isEdit?: boolean
   children?: Component[]
-  layout?: ICell[]
 }
 
 /** 网格布局组件的添加行事件 */
@@ -55,21 +75,14 @@ const Icon = () => <svg
 
 export const dragID = 'mmDroppablePlaceholder'
 
-const defaultLayout = [
-  { middle: true, width: 1, height: 2 },
-  { middle: true, width: 2, height: 1 },
-  { middle: true, width: 2, height: 1 },
-  { middle: true },
-  { middle: true },
-]
-
+// 跨列跨行
 function MMGrid(props: MMBannerProps) {
-  const { gutter = 0, vGutter = 0, colCount = 3, rowCount = 1, id, onEvent, isEdit, children, onRemoteComponentLoad, layout = defaultLayout } = props
-  const [cells, setCells] = useState<React.ReactElement[]>([])
+  const { gutter = 0, vGutter = 0, colCount = 3, rowCount = 1, id, onEvent, isEdit, children, onRemoteComponentLoad } = props
+  const [cols, setCols] = useState<React.ReactElement[]>([])
   const grid = useRef<HTMLDivElement>(null)
-  const data = useRef({ index: -1 })
+  const data = useRef({ row: -1, col: -1 })
 
-  const onAddCell = () => {
+  const onAddRow = () => {
     if (rowCount >= config.schema.properties.rowCount.max) {
       message.info(`不能再添加啦~`)
       return
@@ -86,13 +99,13 @@ function MMGrid(props: MMBannerProps) {
       }
     })
   }
-  const onClick = (e: React.MouseEvent<HTMLDivElement, MouseEvent>, index: number) => {
+  const onClick = (e: React.MouseEvent<HTMLDivElement, MouseEvent>, row: number, col: number) => {
     const target = e.target as HTMLElement | null
     const _id = target?.dataset.id
     if (_id === dragID) {
       reset()
       target?.classList.add(style.dragging)
-      onEvent?.(id, ON_GRID_SELECT_ITEM, { index })
+      onEvent?.(id, ON_GRID_SELECT_ITEM, { index: getIndexByRowAndCol(Array(rowCount * colCount).fill(1), colCount, row, col) })
     }
   }
   const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -101,25 +114,29 @@ function MMGrid(props: MMBannerProps) {
     const target = e.target as HTMLElement | null
     const dragData = e?.dataTransfer?.getData('text/plain')
     const _id = target?.dataset.id
-    const index = target?.dataset.index
+    const row = target?.dataset.row
+    const col = target?.dataset.col
     if (_id === dragID) {
-      if (!index) return
-      onEvent?.(id, ON_GRID_DROP, { index, dragData })
+      if (!row || !col) return
+      onEvent?.(id, ON_GRID_DROP, { index: getIndexByRowAndCol(Array(rowCount * colCount).fill(1), colCount, +row, +col), dragData })
     }
   }
   const onDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     const target = e.target as HTMLElement | null
     const _id = target?.dataset.id
-    const index = target?.dataset.index
+    const row = target?.dataset.row
+    const col = target?.dataset.col
     reset()
     if (_id === dragID) {
       target?.classList.add(style.dragging)
-      if (!index) return
-      data.current.index = Number(index)
+      if (!row || !col) return
+      data.current.row = Number(row)
+      data.current.col = Number(col)
       onEvent?.(id, ON_GRID_DRAG_OVER)
     } else {
-      data.current.index = -1
+      data.current.row = -1
+      data.current.col = -1
       onEvent?.(id, ON_GRID_DRAG_LEAVE)
     }
   }
@@ -127,7 +144,8 @@ function MMGrid(props: MMBannerProps) {
     reset()
     onEvent?.(id, ON_GRID_DRAG_LEAVE)
   }
-  const getItem = (index: number) => {
+  const getItem = (row: number, col: number) => {
+    const index = getIndexByRowAndCol(Array(rowCount * colCount).fill(1), colCount, +row, +col)
     let columnElement: string | React.ReactNode
     const item = children ? children[index] : null
     if (item && item.name !== 'grid-placeholder') {
@@ -136,30 +154,30 @@ function MMGrid(props: MMBannerProps) {
     if (isEdit) {
       return <div
         className={style.mmDroppablePlaceholder}
-        data-index={index}
-        data-id={dragID}>{columnElement || `Column-${index}`}</div>
+        data-row={row}
+        data-col={col}
+        data-id={dragID}>{columnElement || 'Column'}</div>
     }
     return <>{columnElement}</>
   }
 
   useEffect(() => {
-    const _cells: React.ReactElement[] = []
-    layout.forEach((_, index) => {
-      const id = uniqueId()
-      _cells.push(<Cell
-        onClick={(e) => {
-          onClick(e, index)
-        }}
-        key={id}
-        width={_.width}
-        height={_.height}
-        middle={_.middle}
-      >
-        {getItem(index)}
-      </Cell>)
+    const _cols: React.ReactElement[] = []
+    Array(rowCount).fill(1).forEach((_, row) => {
+      Array(colCount).fill(1).forEach((_, col) => {
+        const id = uniqueId()
+        _cols.push(<Col
+          onClick={(e) => {
+            onClick(e, row, col)
+          }}
+          key={id}
+          span={Math.round(24 / colCount)}>
+          {getItem(row, col)}
+        </Col>)
+      })
     })
-    setCells(_cells)
-  }, [colCount, rowCount, children, layout])
+    setCols(_cols)
+  }, [colCount, rowCount, children])
 
   return (
     <div
@@ -167,17 +185,9 @@ function MMGrid(props: MMBannerProps) {
       onDragOver={isEdit ? onDragOver : undefined}
       onDragLeave={isEdit ? onDragLeave : undefined}
       className={style.mmGrid}>
-      <Grid
-        ref={grid}
-        flow="row dense"
-        columns={colCount}
-        minRowHeight="100px"
-        columnGap={gutter}
-        rowGap={vGutter}>
-        {cells}
-      </Grid>
+      <Row ref={grid} gutter={[gutter, vGutter]}>{cols}</Row>
       {isEdit && <Divider className={style.divider} plain dashed>
-        <a className={style.add}><Icon /><span className={style.text} onClick={onAddCell}>添加网格单元</span></a>
+        <a className={style.add}><Icon /><span className={style.text} onClick={onAddRow}>添加网格行</span></a>
       </Divider>}
     </div>
   )

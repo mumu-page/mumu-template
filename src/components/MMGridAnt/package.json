@@ -52,35 +52,6 @@
         "props": {
           "step": 1
         }
-      },
-      "layout": {
-        "title": "布局",
-        "description": "编辑布局单元",
-        "type": "array",
-        "widget": "cardList",
-        "items": {
-          "type": "object",
-          "properties": {
-            "middle": {
-              "title": "是否居中",
-              "type": "boolean"
-            },
-            "width": {
-              "title": "宽度",
-              "description": "与总列数的占比比例",
-              "type": "number",
-              "max": "{{formData.colCount}}",
-              "min": 1
-            },
-            "height": {
-              "title": "高度",
-              "description": "与总行数的占比比例",
-              "type": "number",
-              "max": "{{formData.rowCount}}",
-              "min": 1
-            }
-          }
-        }
       }
     },
     "required": []
@@ -89,29 +60,6 @@
     "gutter": 8,
     "vGutter": 8,
     "colCount": 3,
-    "rowCount": 1,
-    "layout": [
-      {
-        "middle": true,
-        "width": 1,
-        "height": 2
-      },
-      {
-        "middle": true,
-        "width": 2,
-        "height": 1
-      },
-      {
-        "middle": true,
-        "width": 2,
-        "height": 1
-      },
-      {
-        "middle": true
-      },
-      {
-        "middle": true
-      }
-    ]
+    "rowCount": 1
   }
 }

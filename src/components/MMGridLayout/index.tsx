@@ -114,12 +114,12 @@ function MMGridLayout(props: MMBannerProps) {
   }
 
   const onLayoutChange = (layout: RGL.Layout[]) => {
-    onEvent(id, ON_GRID_LAYOUT_CHANGE, { ...props, layout })
+    onEvent(id, ON_GRID_LAYOUT_CHANGE, { layout })
   }
 
   const onAddCol = () => {
     onEvent?.(id, ON_GRID_ADD_ROW, {
-      ...props, layout: [...layout, {
+      layout: [...layout, {
         i: "n" + colCount * rowCount + 1,
         x: (layout.length * 2) % (colCount * 4),
         y: Infinity, // puts it at the bottom
@@ -143,7 +143,7 @@ function MMGridLayout(props: MMBannerProps) {
               item.h = multiple
             }
           })
-          onEvent(id, ON_GRID_LAYOUT_CHANGE, { ...props, layout })
+          onEvent(id, ON_GRID_LAYOUT_CHANGE, { layout })
         }
       })
     } catch (error) {
@@ -201,17 +201,17 @@ function MMGridLayout(props: MMBannerProps) {
   }
 
   useEffect(() => {
-    onEvent(id, ON_GRID_LAYOUT_CHANGE, { ...props, layout: generateLayout(colCount, rowCount, !isEdit) })
+    onEvent(id, ON_GRID_LAYOUT_CHANGE, { layout: generateLayout(colCount, rowCount, !isEdit) })
   }, [colCount, rowCount])
 
-  const onResize = (layout: Layout[], oldItem: Layout, newItem: Layout, placeholder: Layout) => {
+  const onResize = () => {
     requestIdleCallback(() => {
       findMaxHeight()
     })
   }
 
   const winResize = useCallback(() => {
-    onEvent(id, ON_GRID_LAYOUT_CHANGE, { ...props, layout: generateLayout(colCount, rowCount, !isEdit) })
+    onEvent(id, ON_GRID_LAYOUT_CHANGE, { layout: generateLayout(colCount, rowCount, !isEdit) })
   }, [])
 
   useEffect(() => {
