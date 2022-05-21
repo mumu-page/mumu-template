@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef } from 'react'
-import { baseUrl, config, isEdit as _isEdit, isPreview, pageId, postMsgToParent, xhrGet, } from '@/utils/utils'
-import { kebabCase, uniqueId } from 'lodash'
+import { baseUrl, config, isEdit as _isEdit, isPreview, pageId, postMsgToParent, uuid, xhrGet, } from '@/utils/utils'
+import { kebabCase } from 'lodash'
 import { useImmer, } from "use-immer";
 import Tool, { ToolRef } from './components/Tool';
 import Shape, { ShapeRef } from './components/Shape';
@@ -12,7 +12,6 @@ import {
   isTopOrBottom,
   SORT_COMPONENT,
   getElementPosition,
-  GRID_PLACEHOLDER,
   COPY_COMPONENT,
   DELETE_COMPONENT,
   clearDraggingCls,
@@ -49,7 +48,7 @@ function MMTemplate(props: MMTemplateProps) {
         const { data, schema, snapshot, description, ...rest } = config.componentConfig.filter(config => config.name === name)?.[0] || {};
         return {
           name,
-          id: `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${index}_temp`,
+          id: `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${uuid()}_temp`,
           props: data,
           schema,
           snapshot,
@@ -79,7 +78,7 @@ function MMTemplate(props: MMTemplateProps) {
   const editContainer = useRef<HTMLDivElement>(null)
   const staticData = useRef<RefData>({
     isScroll: false,
-    currentId: "",
+    currentId: initialState.components?.[0]?.id,
     hoverCurrentId: "",
     componentsPND: null,
     selectCb: () => {
@@ -257,6 +256,11 @@ function MMTemplate(props: MMTemplateProps) {
               handleLineStyle(e, element)
             }
           }
+          if (type === 'dragleave') {
+            if (isChild) {
+              clearDraggingCls(element, style.dragging)
+            }
+          }
           if (type === 'mouseover') {
             staticData.current.hoverCurrentId = currentId
             !staticData.current.isScroll && computedShapeAndToolStyle()
@@ -266,7 +270,9 @@ function MMTemplate(props: MMTemplateProps) {
           }
           if (type === 'drop') {
             staticData.current.currentId = currentId
-            if (isChild) clearDraggingCls(element, style.dragging)
+            if (isChild) {
+              clearDraggingCls(element, style.dragging)
+            }
             const data = (e as React.DragEvent<HTMLDivElement>)?.dataTransfer?.getData('text/plain')
             if (!data) return
             postMsgToParent({
@@ -315,6 +321,7 @@ function MMTemplate(props: MMTemplateProps) {
   }
   const onDragLeave: React.DragEventHandler<HTMLDivElement> = (e) => {
     shape.current?.hideLine()
+    handleEvent(e, sliderView.current)
   }
   const onDrop: React.DragEventHandler<HTMLDivElement> = (e) => {
     e.preventDefault()

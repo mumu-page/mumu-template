@@ -1,6 +1,4 @@
 import { parse } from 'qs';
-import upperFirst from "lodash.upperfirst";
-import camelCase from "lodash.camelcase";
 
 function getComponent() {
   const componentConfig: any[] = [];
@@ -89,10 +87,7 @@ export function xhrGet(url: string | URL, callback: (arg0: any) => void) {
   request.send(null)
 }
 
-export function guid() {
-  function S4() {
-    return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
-  }
-
-  return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
+export const uuid = () => {
+  // 1590753224242oqgomgkv7tp
+  return new Date().getTime() + Math.random().toString(36).substring(2);
 }

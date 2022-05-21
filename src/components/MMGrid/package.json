@@ -72,7 +72,7 @@
               "type": "number",
               "widget": "slider",
               "default": 1,
-              "max": "{{formData.colCount)}}",
+              "max": "{{formData.colCount}}",
               "min": 1
             },
             "height": {

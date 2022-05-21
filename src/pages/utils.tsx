@@ -1,4 +1,4 @@
-import { uniqueId } from "lodash"
+import { uuid } from "@/utils/utils"
 
 /** 删除组件 */
 export const DELETE_COMPONENT = 'deleteComponent'
@@ -131,7 +131,7 @@ export function clearDraggingCls(element: Element, cls: string) {
 export function generateChildren(layout: any[]) {
   return Array.isArray(layout) ? layout.map(() => ({
     name: GRID_PLACEHOLDER,
-    id: `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${uniqueId()}`,
+    id: `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${uuid()}`,
     props: {},
     schema: {},
   })) : []
