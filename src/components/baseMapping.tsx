@@ -15,25 +15,43 @@ export interface Component {
 }
 
 // 避免循环引用
-export const gridComponents = {
+export const baseComponents = {
   MMRemoteComponentLoader,
   MMBanner,
   MMBarChart3D,
 }
 
-export const gridRenderComponent = (
+interface Params {
   component: Component,
-  mapping: any = {},
+  mapping: any,
   onRemoteComponentLoad: ({ config, name, js, css, schema }: any) => void,
   onEvent: (id: string | undefined | null, type: string, data?: any) => void,
-  isEdit?: boolean) => {
+  index: number,
+  isEdit?: boolean
+  isChild?: boolean
+  isBottom?: number
+  isTop?: number
+}
+export const baseRenderComponent = (params: Params) => {
+  const {
+    component,
+    mapping = {},
+    onRemoteComponentLoad = () => { },
+    onEvent = () => { },
+    isTop,
+    isBottom,
+    isEdit
+  } = params
   const formatName = upperFirst(camelCase(component.name)).replace('Mm', 'MM')
   const Result = mapping[formatName]
 
   if (!Result) return null
   return <div
-    data-layout={component.props && component.props._layout}
+    data-layout={component.props?._layout}
     data-id={component.id}
+    data-isTop={isTop}
+    data-isBottom={isBottom}
+    id={component.id}
     key={component.id}
   >
     {React.createElement(

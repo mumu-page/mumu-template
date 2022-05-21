@@ -3,7 +3,6 @@ import MMTemplate from './pages/MMTemplate';
 import MMBanner from './components/MMBanner';
 import MMBarChart3D from './components/MMBarChart3D';
 import MMGrid from './components/MMGrid';
-import MMGridLayout from './components/MMGridLayout';
 
 function App() {
   return (

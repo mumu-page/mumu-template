@@ -1,11 +1,29 @@
 import React, { useCallback, useEffect, useRef } from 'react'
 import { baseUrl, config, isEdit as _isEdit, isPreview, pageId, postMsgToParent, xhrGet, } from '@/utils/utils'
-import { kebabCase } from 'lodash'
+import { kebabCase, uniqueId } from 'lodash'
 import { useImmer, } from "use-immer";
-import { dragID, ON_GRID_DRAG_LEAVE, ON_GRID_DRAG_OVER, ON_GRID_DROP } from "@/components/MMGridAnt";
 import Tool, { ToolRef } from './components/Tool';
 import Shape, { ShapeRef } from './components/Shape';
-import { ElementStyle, getElementPosition, getScrollTop, isTopOrBottom, RefData, SORT_COMPONENT, State, TEMPLATE_ELE_ID_PREFIX, SET_CURRENTCOMPONENT, COPY_COMPONENT, DELETE_COMPONENT, ADD_COMPONENT } from './utils';
+import {
+  State,
+  RefData,
+  ElementStyle,
+  getScrollTop,
+  isTopOrBottom,
+  SORT_COMPONENT,
+  getElementPosition,
+  GRID_PLACEHOLDER,
+  COPY_COMPONENT,
+  DELETE_COMPONENT,
+  clearDraggingCls,
+  getNodeById,
+  ADD_COMPONENT,
+  getNextIdByNextNode,
+  getPreIdByPreNode,
+  SET_CURRENTCOMPONENT,
+  COMPONENT_ELEMENT_ITEM_ID_PREFIX,
+  generateChildren,
+} from './utils';
 import { renderComponents } from '@/components/mapping';
 import style from "./index.module.less";
 
@@ -20,29 +38,30 @@ interface MMTemplateProps {
   init?: (a: any) => void
 }
 
+// ID是唯一的，应该保存ID
 function MMTemplate(props: MMTemplateProps) {
-  const initialComponent = () => {
+  const initialComponents = () => {
     return window.__mm_config__.components.length // window.__mm_config__.components 是服务端注入的用户选择组件
-      ? window.__mm_config__.components.map((item: any, index: number) => ({ ...item, id: `${TEMPLATE_ELE_ID_PREFIX}${index}_config` }))
+      ? window.__mm_config__.components.map((item: any, index: number) => ({ ...item, id: `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${index}_config` }))
       : props.children.map((c: any, index: number) => {
         const customName = c.type.componentName || c.type.type.componentName
         const name = kebabCase(customName);
-        const { data, schema, snapshot, description } = config.componentConfig.filter(config => config.name === name)?.[0] || {};
+        const { data, schema, snapshot, description, ...rest } = config.componentConfig.filter(config => config.name === name)?.[0] || {};
         return {
           name,
-          id: `${TEMPLATE_ELE_ID_PREFIX}${index}_temp`,
+          id: `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${index}_temp`,
           props: data,
           schema,
           snapshot,
-          description
-        };
+          description,
+          children: generateChildren(data?.layout)
+        }
       })
   }
   const initialState = {
     init: false,
-    components: initialComponent(),
+    components: initialComponents(),
     componentConfig: config.componentConfig,
-    currentIndex: 0,
     remoteComponents: [],
     page: {
       projectName: '模板页面',
@@ -54,15 +73,14 @@ function MMTemplate(props: MMTemplateProps) {
     isBottom: false,
     spinning: true,
     isTop: false,
-    current: 0,
   }
   const [state, setState] = useImmer<State>(initialState)
   const sliderView = useRef<HTMLDivElement>(null)
   const editContainer = useRef<HTMLDivElement>(null)
   const staticData = useRef<RefData>({
     isScroll: false,
-    current: 0,
-    hoverCurrent: 0,
+    currentId: "",
+    hoverCurrentId: "",
     componentsPND: null,
     selectCb: () => {
     },
@@ -90,19 +108,16 @@ function MMTemplate(props: MMTemplateProps) {
   const reset = ({ userSelectComponents, currentIndex, page }: any) => {
     setState(draft => {
       draft.components = userSelectComponents
-      draft.currentIndex = currentIndex
+      // draft.currentIndex = currentIndex
       draft.page = page
     })
     props?.init?.(page.props)
   }
 
   /**
-   * 远程组件加载完成后需要生成 props
-   * @param config
-   * @param name
-   * @param js
-   * @param css
-   * @param schema
+   * 远程组件加载完成
+   * @param param0 
+   * @returns 
    */
   const onRemoteComponentLoad = ({ config, name, js, css, schema }: any) => {
     if (!state.isEdit) return;
@@ -138,11 +153,6 @@ function MMTemplate(props: MMTemplateProps) {
   const onMessage = useCallback((e: MessageEvent) => {
     // 不接受消息源来自于当前窗口的消息
     if (e.source === window || e.data === 'loaded') return
-    if (setState) {
-      setState(draft => {
-        draft.isEdit = true;
-      })
-    }
     (handle as any)?.[e.data.type]?.(e.data.data);
   }, [setState])
 
@@ -153,127 +163,141 @@ function MMTemplate(props: MMTemplateProps) {
    * @param data 
    */
   const onEvent = (id: string | undefined | null, type: string, data: any) => {
-    if (type === ON_GRID_DRAG_OVER) {
-      staticData.current.isGridAdd = true
-      shape.current?.hideLine()
-    }
-    if (type === ON_GRID_DRAG_LEAVE) {
-      staticData.current.isGridAdd = false
-      shape.current?.showLine()
-    }
-    if (type === ON_GRID_DROP) {
-      staticData.current.isGridAdd = true
-      shape.current?.hideLine()
-    }
     // 排除会频繁触发的事件    
-    if ([ON_GRID_DRAG_OVER, ON_GRID_DRAG_LEAVE].includes(type)) return
-    postMsgToParent({ type: "onEvent", data: { id, type, data } })
+    // if ([ON_GRID_DRAG_OVER, ON_GRID_DRAG_LEAVE].includes(type)) return
+    // postMsgToParent({ type: "onEvent", data: { id, type, data } })
   }
 
-  const handleDragEvent = (e: any, node: HTMLElement) => {
+  const handleLineStyle = (e: any, node: HTMLElement) => {
     if (!shape.current) return
-    if (staticData.current.isGridAdd) return
-    const parentElement = e.target.parentElement?.parentElement
-    const id = parentElement?.dataset?.id
-    if (id === dragID) return
     const { top, bottom, width } = node.getBoundingClientRect()
     const type = isTopOrBottom(e, node)
     if (type === 'top') {
       shape.current?.setLineStyle(top - 2, width)
     } else {
-      staticData.current.hoverCurrent = staticData.current.hoverCurrent + 1
       shape.current?.setLineStyle(bottom - 2, width)
     }
   }
 
-  const setToolStyle = (index: number, position: ElementStyle) => {
+  const setToolStyle = (position: ElementStyle, isTop: boolean, isBottom: boolean) => {
     if (!sliderView.current) return
     tool.current?.showTool()
     // 滚动时不更新工具组件，减少卡顿
     if (staticData.current.isScroll) return
-    const childNodes = Array.from(sliderView.current.childNodes)
-    const PIDs = childNodes.map((nd: any) => nd.dataset.id)
+    const children = Array.from(sliderView.current.children)
+    const PIDs = children.map((nd: any) => nd.dataset.id)
     // 设置工具组件样式
     setState(draft => {
       if (PIDs.length === 1) {
         draft.isTop = true
         draft.isBottom = true
       } else {
-        draft.isTop = index === 0
-        draft.isBottom = index === PIDs.length - 1
+        draft.isTop = isTop
+        draft.isBottom = isBottom
       }
       draft.toolStyle = position
     })
   }
 
-  const computedShapeAndToolStyle = () => {
+  const computedShapeAndToolStyle = (updateTool = false) => {
     if (!sliderView.current) return
-    const childNodes = Array.from(sliderView.current.childNodes)
-    if (!childNodes.length) {
+    const children = Array.from(sliderView.current.children)
+    if (!children.length) {
       shape.current?.hideShape()
       shape.current?.hideShapeHover()
       tool.current?.hideTool()
-      staticData.current.current = -1
+      staticData.current.currentId = ""
       return;
     }
-    const currentDom = childNodes[staticData.current.current] as HTMLElement
-    const hoverCurrentDom = childNodes[staticData.current.hoverCurrent] as HTMLElement
+    const currentDom = getNodeById(staticData.current.currentId)
+    const hoverCurrentDom = getNodeById(staticData.current.hoverCurrentId)
 
     if (currentDom) {
-      const position = getElementPosition(currentDom, editContainer.current, sliderView.current)
-      setToolStyle(staticData.current.current, position)
+      const position = getElementPosition(currentDom)
       shape.current?.setShapeStyle(position)
-      setState(draft => {
-        draft.current = staticData.current.current;
-      })
+      if (updateTool) {
+        const isTop = !!+(currentDom?.dataset.istop || 0)
+        const isBottom = !!+(currentDom?.dataset.isbottom || 0)
+        setToolStyle(position, isTop, isBottom)
+      }
     }
     if (hoverCurrentDom) {
-      const hoverPosition = getElementPosition(hoverCurrentDom, editContainer.current, sliderView.current)
+      const hoverPosition = getElementPosition(hoverCurrentDom)
       shape.current?.setShapeHoverStyle(hoverPosition)
     }
   }
 
-  const handleEvent = (e: React.MouseEvent<HTMLDivElement, MouseEvent>, componentsPND: any, callback?: Function) => {
+  const handleEvent = (e: React.MouseEvent<HTMLDivElement, MouseEvent> | React.DragEvent<HTMLDivElement>, componentsPND: any, callback?: Function) => {
     const type = e.type // dragover mousemove click
     let node = e.target as HTMLElement | null;
-    if (!node) return
-    while (node?.tagName !== 'HTML') {
-      let currentId = node?.dataset.id || '';
-      if (currentId.indexOf(TEMPLATE_ELE_ID_PREFIX) >= 0) {
-        const PIDs = Array.from(componentsPND.childNodes).map((nd: any) => nd.dataset.id)
-        PIDs.forEach((id, index) => {
-          // 对比当前鼠标位置的元素
-          if (id === currentId && node) {
-            if (type === 'dragover') {
-              staticData.current.hoverCurrent = index
-              handleDragEvent(e, node)
-            }
-            if (type === 'mouseover') {
-              staticData.current.hoverCurrent = index
-              !staticData.current.isScroll && computedShapeAndToolStyle()
-            }
-            if (type === 'click') {
-              staticData.current.current = index
-            }
-            if (type === 'drop') {
-              const type = isTopOrBottom(e, node)
-              if (type === 'top') {
-                staticData.current.current = index !== 0 ? index - 1 : 0
-              } else {
-                staticData.current.current = index + 1
-              }
-            }
-            if (['click', 'drop'].includes(type)) {
-              computedShapeAndToolStyle()
-              postMsgToParent({ type: 'setCurrentComponent', data: { currentIndex: index } })
-            }
-            callback?.(staticData.current.current);
-          }
-        })
-        break;
+    let currentId = node?.dataset.id || node?.parentElement?.dataset.id || '';
+    if (!currentId) {
+      // 拿到最近ID (向上查找元素，直到查到根元素或ID就结束)
+      while (node?.tagName !== 'HTML') {
+        currentId = node?.dataset.id || ''
+        node = node?.parentNode as HTMLElement;
+        if (currentId) break
       }
-      node = node?.parentNode as HTMLElement;
     }
+    if (!node) return
+    if (currentId.indexOf(COMPONENT_ELEMENT_ITEM_ID_PREFIX) < 0) return
+    const elements = Array.from(componentsPND.children)
+    const findComponents = (elements: any[], isChild = false) => {
+      for (let index = 0; index < elements.length; index++) {
+        const element = elements[index] as HTMLElement | null;
+        const id = element?.dataset?.id
+        // 对比当前鼠标位置的元素
+        if (id === currentId && element) {
+          if (type === 'dragover') {
+            staticData.current.hoverCurrentId = currentId
+            if (isChild) {
+              clearDraggingCls(element, style.dragging)
+              element?.classList.add(style.dragging)
+            } else {
+              handleLineStyle(e, element)
+            }
+          }
+          if (type === 'mouseover') {
+            staticData.current.hoverCurrentId = currentId
+            !staticData.current.isScroll && computedShapeAndToolStyle()
+          }
+          if (type === 'click') {
+            staticData.current.currentId = currentId
+          }
+          if (type === 'drop') {
+            staticData.current.currentId = currentId
+            if (isChild) clearDraggingCls(element, style.dragging)
+            const data = (e as React.DragEvent<HTMLDivElement>)?.dataTransfer?.getData('text/plain')
+            if (!data) return
+            postMsgToParent({
+              type: ADD_COMPONENT, data: {
+                data: JSON.parse(data),
+                nextId: getNextIdByNextNode(staticData.current.hoverCurrentId),
+                currentId: staticData.current.currentId
+              }
+            })
+            // 设置要插入的元素的占位辅助线位置
+            if (isChild) return
+            const type = isTopOrBottom(e, element)
+            if (type === 'top') {
+              staticData.current.currentId = getPreIdByPreNode(currentId)
+            } else {
+              staticData.current.currentId = getNextIdByNextNode(currentId)
+            }
+          }
+          if (['click', 'drop'].includes(type)) {
+            computedShapeAndToolStyle(type === 'click')
+            // 布局容器暂不支持直接更改顺序等操作
+            isChild && tool.current?.hideTool()
+            postMsgToParent({ type: SET_CURRENTCOMPONENT, data: { currentId: staticData.current.currentId, isChild } })
+          }
+          callback?.(staticData.current.currentId);
+          break
+        }
+        if (element?.children) findComponents(Array.from(element.children), true)
+      }
+    }
+    findComponents(elements)
   }
 
   const onClick: React.MouseEventHandler<HTMLDivElement> = (e) => {
@@ -294,21 +318,14 @@ function MMTemplate(props: MMTemplateProps) {
   }
   const onDrop: React.DragEventHandler<HTMLDivElement> = (e) => {
     e.preventDefault()
-    if (staticData.current.isGridAdd) return
     shape.current?.hideLine()
-    const data = e?.dataTransfer?.getData('text/plain')
-    if (data != null) {
-      postMsgToParent({ type: ADD_COMPONENT, data: { data: JSON.parse(data), index: staticData.current.hoverCurrent } })
-    }
-    // 重置样式
-    staticData.current.current = staticData.current.hoverCurrent
     handleEvent(e, sliderView.current)
   }
   const onResize = useCallback(() => {
     computedShapeAndToolStyle()
   }, [])
 
-  const onScroll = () => {
+  const onScroll = useCallback(() => {
     staticData.current.isScroll = true
     clearTimeout(staticData.current.timer as any);
     computedShapeAndToolStyle()
@@ -320,30 +337,39 @@ function MMTemplate(props: MMTemplateProps) {
         staticData.current.isScroll = false
       }
     }, 500);
-  }
+  }, [])
 
   const onSortComponent = (type: 'up' | 'down') => {
-    const op = type === 'up' ? -1 : 1
-    const index = staticData.current.current
-    const next = index + op < 0 ? 0 : index + op;
-    postMsgToParent({ type: SORT_COMPONENT, data: { index, next } })
-    staticData.current.current = next
-    postMsgToParent({ type: SET_CURRENTCOMPONENT, data: { currentIndex: staticData.current.current } })
+    const nextId = type === 'up' ? getPreIdByPreNode(staticData.current.currentId) : getNextIdByNextNode(staticData.current.currentId)
+    postMsgToParent({ type: SORT_COMPONENT, data: { currentId: staticData.current.currentId, nextId } })
+    postMsgToParent({ type: SET_CURRENTCOMPONENT, data: { currentId: staticData.current.currentId } })
     computedShapeAndToolStyle()
   }
 
   const onCopyComponent = () => {
-    postMsgToParent({ type: COPY_COMPONENT, data: { index: staticData.current.current } })
-    staticData.current.current = staticData.current.current + 1
-    postMsgToParent({ type: SET_CURRENTCOMPONENT, data: { currentIndex: staticData.current.current } })
+    postMsgToParent({
+      type: COPY_COMPONENT, data: {
+        nextId: getNextIdByNextNode(staticData.current.currentId),
+        currentId: staticData.current.currentId
+      }
+    })
+    postMsgToParent({ type: SET_CURRENTCOMPONENT, data: { currentId: staticData.current.currentId } })
     computedShapeAndToolStyle()
   }
 
   const onDeleteComponent = () => {
-    postMsgToParent({ type: DELETE_COMPONENT, data: staticData.current.current })
-    staticData.current.current = staticData.current.current - 1 < 0 ? 0 : staticData.current.current - 1
+    postMsgToParent({
+      type: DELETE_COMPONENT, data: {
+        nextId: getNextIdByNextNode(staticData.current.currentId),
+        currentId: staticData.current.currentId
+      }
+    })
+    postMsgToParent({
+      type: SET_CURRENTCOMPONENT, data: {
+        currentId: staticData.current.currentId
+      }
+    })
     computedShapeAndToolStyle()
-    postMsgToParent({ type: SET_CURRENTCOMPONENT, data: { currentIndex: staticData.current.current } })
   }
 
   useEffect(() => {
@@ -378,10 +404,12 @@ function MMTemplate(props: MMTemplateProps) {
   useEffect(() => {
     document.title = state.page.projectName
     window.addEventListener('resize', onResize)
-    const resizeObserver = new ResizeObserver(computedShapeAndToolStyle)
+    const resizeObserver = new ResizeObserver(() => computedShapeAndToolStyle())
     sliderView.current && resizeObserver.observe(sliderView.current)
+    editContainer.current?.addEventListener('scroll', onScroll)
     return () => {
       window.removeEventListener('resize', onResize)
+      editContainer.current?.addEventListener('scroll', onScroll)
       resizeObserver.disconnect()
     }
   }, [])
@@ -391,7 +419,6 @@ function MMTemplate(props: MMTemplateProps) {
   return (
     <div
       ref={editContainer}
-      onScroll={onScroll}
       className={style.edit}>
       <div
         onClick={onClick}

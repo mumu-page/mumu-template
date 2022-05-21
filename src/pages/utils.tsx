@@ -1,3 +1,5 @@
+import { uniqueId } from "lodash"
+
 /** 删除组件 */
 export const DELETE_COMPONENT = 'deleteComponent'
 /** 获取配置 */
@@ -13,28 +15,28 @@ export const RESET = 'reset'
 /** 新增组件 */
 export const ADD_COMPONENT = 'addComponent'
 /** 组件ID前缀 */
-export const TEMPLATE_ELE_ID_PREFIX = 'mm-render-id-_component_'
+export const COMPONENT_ELEMENT_ITEM_ID_PREFIX = 'mm-render-id-_component_'
 /** 设置选中组件 */
 export const SET_CURRENTCOMPONENT = 'setCurrentComponent'
+/** 网格组件占位组件名 */
+export const GRID_PLACEHOLDER = 'grid_placeholder'
 
 export interface State {
   init: boolean,
   components: any[]
   componentConfig: any[]
-  currentIndex: number
   remoteComponents: any[]
   page: Record<string, any>
   isEdit: boolean
   toolStyle: ElementStyle
   isBottom: boolean
   isTop: boolean
-  current: number
 }
 
 export interface RefData {
   isScroll: boolean,
-  current: number,
-  hoverCurrent: number,
+  currentId: string,
+  hoverCurrentId: string,
   componentsPND: Element | null | undefined
   selectCb?: (arg0: number) => void
   resizeObserver: ResizeObserver | null
@@ -63,25 +65,12 @@ export interface Component {
   children?: Component[]
 }
 
-/**
- * 偏移值，如果滚动条存在则减去滚动条宽度
- * @returns 
- */
-export const getDeviation = (editContainer: HTMLDivElement | null, sliderView: HTMLDivElement | null) => {
-  let deviation = 0
-  const containerHeight = editContainer?.getBoundingClientRect()?.height || 0
-  const sliderHeight = sliderView?.getBoundingClientRect()?.height || 0
-  if (Math.floor(sliderHeight) > Math.ceil(containerHeight)) deviation = 5
-  return deviation
-}
-
-export const getElementPosition = (element: HTMLElement, editContainer: HTMLDivElement | null, sliderView: HTMLDivElement | null): ElementStyle => {
-  const { width, height, left: _left, top: _top, right: _right } = element?.getBoundingClientRect()
+export const getElementPosition = (element: HTMLElement): ElementStyle => {
+  const { width, height, left, top } = element?.getBoundingClientRect()
   const clientHeight = document.documentElement.clientHeight
-  const top = _top
-  const left = _left
-  const right = _right - width + getDeviation(editContainer, sliderView)
-  const bottom = clientHeight - top - height
+  const clientWidth = document.documentElement.clientWidth
+  const right = clientWidth - width - left
+  const bottom = clientHeight - height - top
   return { left, right, top, bottom, width, height }
 }
 
@@ -97,4 +86,53 @@ export const isTopOrBottom = (e: any, node: HTMLElement) => {
 
 export function getScrollTop() {
   return document.documentElement.scrollTop || document.body.scrollTop;
+}
+
+/**
+ * 根据ID查找对应元素
+ * @param id
+ * @returns
+ */
+export function getNodeById(id: string): HTMLElement | null {
+  return document.getElementById(id)
+}
+
+/**
+ * 返回元素下一个元素ID
+ * @param id 
+ * @returns 
+ */
+export function getNextIdByNextNode(id: string) {
+  const nextNode = getNodeById(id)?.nextElementSibling as HTMLElement
+  return nextNode?.dataset.id || ""
+}
+
+/**
+ * 返回元素上一个元素ID
+ * @param id 
+ * @returns 
+ */
+export function getPreIdByPreNode(id: string) {
+  const preNode = getNodeById(id)?.previousElementSibling as HTMLElement
+  return preNode?.dataset.id || ""
+}
+
+/**
+ * 清除拖拽样式的类名，用于容器组件
+ * @param element 
+ * @param cls 
+ */
+export function clearDraggingCls(element: Element, cls: string) {
+  Array.from(element?.parentElement?.parentElement?.children as any).forEach((item: any) => {
+    item?.children?.[0].classList.remove(cls)
+  })
+}
+
+export function generateChildren(layout: any[]) {
+  return Array.isArray(layout) ? layout.map(() => ({
+    name: GRID_PLACEHOLDER,
+    id: `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${uniqueId()}`,
+    props: {},
+    schema: {},
+  })) : []
 }

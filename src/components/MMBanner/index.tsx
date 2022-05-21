@@ -12,6 +12,7 @@ function MMBanner(props: MMBannerProps) {
       src={src}
       width="100%"
       alt="图片"
+      onDragStart={(e) => e.preventDefault()}
     />
   )
 }

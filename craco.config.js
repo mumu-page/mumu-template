@@ -82,11 +82,6 @@ module.exports = {
             entry: 'https://unpkg.com/echarts@5.3.2/dist/echarts.min.js',
             global: 'echarts',
           },
-          {
-            module: 'react-grid-layout',
-            entry: 'https://unpkg.com/react-grid-layout@1/dist/react-grid-layout.min.js',
-            global: 'ReactGridLayout',
-          },
         ]
       }),
       new BannerPlugin(`mumu-template v1.0.0

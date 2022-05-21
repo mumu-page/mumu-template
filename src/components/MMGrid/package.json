@@ -51,7 +51,8 @@
         "max": 6,
         "props": {
           "step": 1
-        }
+        },
+        "hidden": true
       },
       "layout": {
         "title": "布局",
@@ -69,14 +70,18 @@
               "title": "宽度",
               "description": "与总列数的占比比例",
               "type": "number",
-              "max": "{{formData.colCount}}",
+              "widget": "slider",
+              "default": 1,
+              "max": "{{formData.colCount)}}",
               "min": 1
             },
             "height": {
               "title": "高度",
               "description": "与总行数的占比比例",
               "type": "number",
-              "max": "{{formData.rowCount}}",
+              "widget": "slider",
+              "default": 1,
+              "max": "{{formData.layout.length}}",
               "min": 1
             }
           }
@@ -89,7 +94,7 @@
     "gutter": 8,
     "vGutter": 8,
     "colCount": 3,
-    "rowCount": 1,
+    "rowCount": 3,
     "layout": [
       {
         "middle": true,
@@ -105,6 +110,9 @@
         "middle": true,
         "width": 2,
         "height": 1
+      },
+      {
+        "middle": true
       },
       {
         "middle": true

@@ -1,11 +1,9 @@
-import { gridComponents, gridRenderComponent } from "./gridMapping";
+import { baseComponents, baseRenderComponent } from "./baseMapping";
 import MMGrid from "./MMGrid";
-import MMGridLayout from "./MMGridLayout";
 
 export const rootComponents = {
-  ...gridComponents,
+  ...baseComponents,
   MMGrid,
-  MMGridLayout
 }
 
 export interface Component {
@@ -22,5 +20,14 @@ export const renderComponents = (
   onRemoteComponentLoad: ({ config, name, js, css, schema }: any) => void,
   onEvent: (id: string | undefined | null, type: string, data?: any) => void,
   isEdit: boolean) => {
-  return components.map((component) => gridRenderComponent(component, rootComponents, onRemoteComponentLoad, onEvent, isEdit))
+  return components.map((component, index) => baseRenderComponent({
+    isTop: index === 0 ? 1 : 0,
+    isBottom: index === components.length - 1 ? 1 : 0,
+    component,
+    mapping: rootComponents,
+    onRemoteComponentLoad,
+    onEvent,
+    index,
+    isEdit
+  }))
 }
