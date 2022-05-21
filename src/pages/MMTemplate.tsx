@@ -1,6 +1,5 @@
-import React, { useCallback, useEffect, useRef } from 'react'
-import { baseUrl, config, isEdit as _isEdit, isPreview, pageId, postMsgToParent, uuid, xhrGet, } from '@/utils/utils'
-import { kebabCase } from 'lodash'
+import React, { memo, useCallback, useEffect, useRef } from 'react'
+import { baseUrl, config, isEdit as _isEdit, isPreview, pageId, postMsgToParent, xhrGet, } from '@/utils/utils'
 import { useImmer, } from "use-immer";
 import Tool, { ToolRef } from './components/Tool';
 import Shape, { ShapeRef } from './components/Shape';
@@ -21,7 +20,7 @@ import {
   getPreIdByPreNode,
   SET_CURRENTCOMPONENT,
   COMPONENT_ELEMENT_ITEM_ID_PREFIX,
-  generateChildren,
+  initialComponents,
 } from './utils';
 import { renderComponents } from '@/components/mapping';
 import style from "./index.module.less";
@@ -34,32 +33,13 @@ declare global {
 
 interface MMTemplateProps {
   children: React.ReactNode[]
-  init?: (a: any) => void
 }
 
 // ID是唯一的，应该保存ID
 function MMTemplate(props: MMTemplateProps) {
-  const initialComponents = () => {
-    return window.__mm_config__.components.length // window.__mm_config__.components 是服务端注入的用户选择组件
-      ? window.__mm_config__.components.map((item: any, index: number) => ({ ...item, id: `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${index}_config` }))
-      : props.children.map((c: any, index: number) => {
-        const customName = c.type.componentName || c.type.type.componentName
-        const name = kebabCase(customName);
-        const { data, schema, snapshot, description, ...rest } = config.componentConfig.filter(config => config.name === name)?.[0] || {};
-        return {
-          name,
-          id: `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${uuid()}_temp`,
-          props: data,
-          schema,
-          snapshot,
-          description,
-          children: generateChildren(data?.layout)
-        }
-      })
-  }
-  const initialState = {
+  const [state, setState] = useImmer<State>({
     init: false,
-    components: initialComponents(),
+    components: [],
     componentConfig: config.componentConfig,
     remoteComponents: [],
     page: {
@@ -70,15 +50,13 @@ function MMTemplate(props: MMTemplateProps) {
     isEdit: _isEdit,
     toolStyle: { top: 0, left: 0, width: 0, height: 0, right: 0, bottom: 0 },
     isBottom: false,
-    spinning: true,
     isTop: false,
-  }
-  const [state, setState] = useImmer<State>(initialState)
+  })
   const sliderView = useRef<HTMLDivElement>(null)
   const editContainer = useRef<HTMLDivElement>(null)
   const staticData = useRef<RefData>({
     isScroll: false,
-    currentId: initialState.components?.[0]?.id,
+    currentId: "",
     hoverCurrentId: "",
     componentsPND: null,
     selectCb: () => {
@@ -110,7 +88,6 @@ function MMTemplate(props: MMTemplateProps) {
       // draft.currentIndex = currentIndex
       draft.page = page
     })
-    props?.init?.(page.props)
   }
 
   /**
@@ -395,20 +372,25 @@ function MMTemplate(props: MMTemplateProps) {
         setState(draft => {
           draft.components = data.userSelectComponents
           draft.page = data.pageData
-          props?.init?.(state.page.props)
         })
       });
       return;
     }
-    props?.init?.(state.page.props)
-    postMsgToParent({
-      type: "onLoad", data: {
-        components: state.components,
-      }
-    })
   }, [])
 
   useEffect(() => {
+    // 设置模板组件默认列表
+    const components = initialComponents(props.children)
+    staticData.current.currentId = components?.[0]?.id
+    setState(draft => {
+      // 确保只更新一次
+      draft.components = components
+      postMsgToParent({
+        type: "onLoad",
+        data: { components, }
+      })
+    })
+    // 设置页面标题
     document.title = state.page.projectName
     window.addEventListener('resize', onResize)
     const resizeObserver = new ResizeObserver(() => computedShapeAndToolStyle())
@@ -454,4 +436,4 @@ function MMTemplate(props: MMTemplateProps) {
   )
 }
 
-export default MMTemplate
+export default memo(MMTemplate)

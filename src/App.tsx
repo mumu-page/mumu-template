@@ -9,10 +9,10 @@ function App() {
     <div className='mm-light'>
       <MMTemplate>
         <MMGrid onEvent={() => { }} onRemoteComponentLoad={() => { }} />
+        <MMBarChart3D backgroundColor={""} color={[]} />
         <MMBanner
           src={'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png'}
         />
-        <MMBarChart3D backgroundColor={""} color={[]} />
       </MMTemplate>
     </div>
   );

@@ -1,4 +1,5 @@
-import { uuid } from "@/utils/utils"
+import { config, uuid } from "@/utils/utils"
+import kebabCase from "lodash.kebabcase"
 
 /** 删除组件 */
 export const DELETE_COMPONENT = 'deleteComponent'
@@ -135,4 +136,23 @@ export function generateChildren(layout: any[]) {
     props: {},
     schema: {},
   })) : []
+}
+
+export const initialComponents = (children: React.ReactNode[]) => {
+  return window.__mm_config__.components.length // window.__mm_config__.components 是服务端注入的用户选择组件
+    ? window.__mm_config__.components.map((item: any, index: number) => ({ ...item, id: `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${uuid()}_config` }))
+    : children.map((c: any, index: number) => {
+      const customName = c.type.componentName || c.type.type.componentName
+      const name = kebabCase(customName);
+      const { data, schema, snapshot, description, } = config.componentConfig.filter(config => config.name === name)?.[0] || {};
+      return {
+        name,
+        id: `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${uuid()}_temp`,
+        props: data,
+        schema,
+        snapshot,
+        description,
+        children: generateChildren(data?.layout)
+      }
+    })
 }
