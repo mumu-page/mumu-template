@@ -1,6 +1,6 @@
 {
   "name": "sadadas",
-  "version": "0.1.10",
+  "version": "0.2.0",
   "private": true,
   "dependencies": {
     "@jiaminghi/data-view-react": "^1.2.5",
@@ -68,5 +68,5 @@
     "webpack-bundle-analyzer": "^4.5.0"
   },
   "readme": "ERROR: No README data found!",
-  "_id": "sadadas@0.1.9"
+  "_id": "sadadas@0.1.10"
 }
