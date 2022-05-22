@@ -82,10 +82,9 @@ function MMTemplate(props: MMTemplateProps) {
     })
   }
 
-  const reset = ({ userSelectComponents, currentIndex, page }: any) => {
+  const reset = ({ userSelectComponents, page }: any) => {
     setState(draft => {
       draft.components = userSelectComponents
-      // draft.currentIndex = currentIndex
       draft.page = page
     })
   }
@@ -114,6 +113,7 @@ function MMTemplate(props: MMTemplateProps) {
   }
 
   const setIframeComponents = ({ components, projectName }: any) => {
+    // 重置子页面ID，不能和父页面的ID一样
     setState(draft => {
       draft.components = components
       draft.page.projectName = projectName
@@ -182,12 +182,10 @@ function MMTemplate(props: MMTemplateProps) {
       shape.current?.hideShape()
       shape.current?.hideShapeHover()
       tool.current?.hideTool()
-      staticData.current.currentId = ""
       return;
     }
     const currentDom = getNodeById(staticData.current.currentId)
     const hoverCurrentDom = getNodeById(staticData.current.hoverCurrentId)
-
     if (currentDom) {
       const position = getElementPosition(currentDom)
       shape.current?.setShapeStyle(position)
@@ -246,27 +244,23 @@ function MMTemplate(props: MMTemplateProps) {
             staticData.current.currentId = currentId
           }
           if (type === 'drop') {
-            staticData.current.currentId = currentId
             if (isChild) {
               clearDraggingCls(element, style.dragging)
             }
+            staticData.current.currentId = currentId
             const data = (e as React.DragEvent<HTMLDivElement>)?.dataTransfer?.getData('text/plain')
             if (!data) return
+            const dragData = JSON.parse(data)
             postMsgToParent({
               type: ADD_COMPONENT, data: {
-                data: JSON.parse(data),
-                nextId: getNextIdByNextNode(staticData.current.hoverCurrentId),
-                currentId: staticData.current.currentId
+                data: dragData,
+                currentId: staticData.current.currentId,
+                dragId: dragData.id,
+                type: isTopOrBottom(e, element)
               }
             })
-            // 设置要插入的元素的占位辅助线位置
-            if (isChild) return
-            const type = isTopOrBottom(e, element)
-            if (type === 'top') {
-              staticData.current.currentId = getPreIdByPreNode(currentId)
-            } else {
-              staticData.current.currentId = getNextIdByNextNode(currentId)
-            }
+            // 添加组件完成后，ID被替换成了拖拽过来的了
+            staticData.current.currentId = dragData.id
           }
           if (['click', 'drop'].includes(type)) {
             computedShapeAndToolStyle(type === 'click')
@@ -387,7 +381,7 @@ function MMTemplate(props: MMTemplateProps) {
       draft.components = components
       postMsgToParent({
         type: "onLoad",
-        data: { components, }
+        data: { components }
       })
     })
     // 设置页面标题
