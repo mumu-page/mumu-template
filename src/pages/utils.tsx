@@ -1,5 +1,6 @@
 import { config, uuid } from "@/utils/utils"
 import kebabCase from "lodash.kebabcase"
+import { get } from 'lodash';
 
 /** 删除组件 */
 export const DELETE_COMPONENT = 'deleteComponent'
@@ -7,6 +8,7 @@ export const DELETE_COMPONENT = 'deleteComponent'
 export const GET_CONFIG = 'getConfig'
 /** 变更当前索引 */
 export const CHANGE_INDEX = 'changeIndex'
+export const CHANGE_PROPS = 'changeProps'
 /** 对组件排序 */
 export const SORT_COMPONENT = 'sortComponent'
 /** 复制组件 */
@@ -21,6 +23,12 @@ export const COMPONENT_ELEMENT_ITEM_ID_PREFIX = 'mm-render-id-_component_'
 export const SET_CURRENTCOMPONENT = 'setCurrentComponent'
 /** 网格组件占位组件名 */
 export const GRID_PLACEHOLDER = 'grid_placeholder'
+/** 名称是这个的就是系统组件 */
+export const GLOBAL_COMPONENT_TYPE_NAME = 'global-component'
+/** 远程组件加载器名称 */
+export const REMOTE_COMPONENT_LOADER_NAME = 'mm-remote-component-loader'
+export const SET_HISTORY = 'setHistory'
+export const SET_CONFIG = 'setConfig'
 
 export interface State {
   init: boolean,
@@ -32,6 +40,7 @@ export interface State {
   toolStyle: ElementStyle
   isBottom: boolean
   isTop: boolean
+  currentComponent: any
 }
 
 export interface RefData {
@@ -155,4 +164,72 @@ export const initialComponents = (children: React.ReactNode[]) => {
         children: generateChildren(data?.layout)
       }
     })
+}
+
+export function getComponentById(userSelectComponents: Component[], id: string, isChild = false, parentIndex = -1, layer: number[] = []): {
+  element: Component,
+  index: number,
+  isChild: boolean,
+  parentIndex?: number,
+  layer?: number[],
+} | { index: -1, element: undefined, isChild: undefined, parentIndex: undefined, layer: undefined } {
+  for (let index = 0; index < userSelectComponents.length; index++) {
+    const element = userSelectComponents[index];
+    if (element.children) {
+      const ret = getComponentById(element.children, id, true, index, [...layer, index])
+      // 在子项中找到了就返回就行
+      if (ret.index !== -1) return ret
+    }
+    if (element.id === id) {
+      return { element, index, isChild, parentIndex, layer: [...layer, index] }
+    }
+
+  }
+  return { index: -1, element: undefined, isChild: undefined, parentIndex: undefined, layer: undefined }
+}
+
+export function handleCurrentComponent({
+  state,
+  layer = [],
+  index,
+  isChild = false
+}: {
+  state: State,
+  layer?: number[],
+  index: number,
+  isChild?: boolean | undefined
+}) {
+  // 没有组件选中，进行页面修改
+  if (!isChild && index === -1) {
+    return {
+      ...state.currentComponent,
+      currentComponentSchema: {},
+      component: undefined,
+      type: '__page',
+    }
+  }
+  // 选中的组件
+  let selectComponent: Component
+  if (isChild) {
+    let path = layer.toString().replace(/,/, '.children.')
+    selectComponent = get(state.components, path);
+  } else {
+    selectComponent = state.components[index]
+  }
+  if (!selectComponent) return
+  let currentComponentSchema: any = {}
+  // 远程组件
+  if (selectComponent.name === REMOTE_COMPONENT_LOADER_NAME) {
+    const _component = state.remoteComponents?.filter((c: any) => `${c.name}` === `${selectComponent?.config?.name}`)?.[0]
+    currentComponentSchema = _component?.schema || {};
+  } else {
+    const _component = state.components.filter((c: any) => c.name === selectComponent.name)?.[0]
+    currentComponentSchema = _component?.schema;
+  }
+  // 当前修改项，用于 form-render
+  return {
+    ...state.currentComponent,
+    currentComponentSchema,
+    component: selectComponent,
+  }
 }
