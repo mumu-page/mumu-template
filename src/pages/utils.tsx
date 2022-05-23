@@ -32,29 +32,30 @@ export const SET_CONFIG = 'setConfig'
 
 export interface State {
   init: boolean,
-  components: any[]
-  componentConfig: any[]
-  remoteComponents: any[]
-  page: Record<string, any>
+  components: Component[]
   isEdit: boolean
   toolStyle: ElementStyle
   isBottom: boolean
   isTop: boolean
-  currentComponent: any
+  page: Record<string, any>
 }
 
 export interface RefData {
+  page: Record<string, any>
   isScroll: boolean,
   currentId: string,
   hoverCurrentId: string,
   componentsPND: Element | null | undefined
-  selectCb?: (arg0: number) => void
   resizeObserver: ResizeObserver | null
   mutationObserver: MutationObserver | null
   preTop: number;
   nextTop: number;
   isGridAdd: boolean;
   timer: NodeJS.Timeout | null;
+  components: Component[]
+  componentConfig: any[]
+  remoteComponents: any[]
+  currentComponent: any
 }
 
 export interface ElementStyle {
@@ -69,7 +70,7 @@ export interface ElementStyle {
 export interface Component {
   id: string
   name: string
-  props: Record<string, string | number | object>
+  props: { [key: string]: any }
   schema: any
   config?: any
   children?: Component[]
@@ -138,13 +139,20 @@ export function clearDraggingCls(element: Element, cls: string) {
   })
 }
 
-export function generateChildren(layout: any[]) {
-  return Array.isArray(layout) ? layout.map(() => ({
+export function getChildItem() {
+  return {
     name: GRID_PLACEHOLDER,
     id: `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${uuid()}`,
     props: {},
     schema: {},
-  })) : []
+  }
+}
+
+export function generateChildren(layout: any[] | number) {
+  if (typeof layout === 'number') {
+    return Array(layout).fill(1).map(() => getChildItem())
+  }
+  return Array.isArray(layout) ? layout.map(() => getChildItem()) : []
 }
 
 export const initialComponents = (children: React.ReactNode[]) => {
@@ -188,13 +196,13 @@ export function getComponentById(userSelectComponents: Component[], id: string, 
   return { index: -1, element: undefined, isChild: undefined, parentIndex: undefined, layer: undefined }
 }
 
-export function handleCurrentComponent({
+export function getCurrentComponent({
   state,
   layer = [],
   index,
   isChild = false
 }: {
-  state: State,
+  state: RefData,
   layer?: number[],
   index: number,
   isChild?: boolean | undefined
@@ -202,7 +210,6 @@ export function handleCurrentComponent({
   // 没有组件选中，进行页面修改
   if (!isChild && index === -1) {
     return {
-      ...state.currentComponent,
       currentComponentSchema: {},
       component: undefined,
       type: '__page',
@@ -228,7 +235,6 @@ export function handleCurrentComponent({
   }
   // 当前修改项，用于 form-render
   return {
-    ...state.currentComponent,
     currentComponentSchema,
     component: selectComponent,
   }

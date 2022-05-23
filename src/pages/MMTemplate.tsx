@@ -20,15 +20,14 @@ import {
   Component,
   REMOTE_COMPONENT_LOADER_NAME,
   getComponentById,
-  handleCurrentComponent,
-  SET_HISTORY,
-  SET_CURRENTCOMPONENT,
+  getCurrentComponent,
   SET_CONFIG,
+  generateChildren,
 } from './utils';
 import { renderComponents } from '@/components/mapping';
-import style from "./index.module.less";
 import { cloneDeep, set } from 'lodash';
 import { message } from 'antd';
+import style from "./index.module.less";
 
 declare global {
   interface Window {
@@ -45,8 +44,6 @@ function MMTemplate(props: MMTemplateProps) {
   const [state, setState] = useImmer<State>({
     init: false,
     components: [],
-    componentConfig: config.componentConfig,
-    remoteComponents: [],
     page: {
       projectName: '模板页面',
       schema: (config.pageConfig as any).schema,
@@ -56,7 +53,6 @@ function MMTemplate(props: MMTemplateProps) {
     toolStyle: { top: 0, left: 0, width: 0, height: 0, right: 0, bottom: 0 },
     isBottom: false,
     isTop: false,
-    currentComponent: {}
   })
   const sliderView = useRef<HTMLDivElement>(null)
   const editContainer = useRef<HTMLDivElement>(null)
@@ -65,19 +61,28 @@ function MMTemplate(props: MMTemplateProps) {
     currentId: "",
     hoverCurrentId: "",
     componentsPND: null,
-    selectCb: () => {
-    },
     resizeObserver: null,
     mutationObserver: null,
     preTop: 0,
     nextTop: 0,
     timer: null,
-    isGridAdd: false
+    isGridAdd: false,
+    components: [],
+    componentConfig: config.componentConfig,
+    remoteComponents: [],
+    currentComponent: {},
+    page: {
+      projectName: '模板页面',
+      schema: (config.pageConfig as any).schema,
+      props: (window.__mm_config__.pageData && window.__mm_config__.pageData.props) || (config.pageConfig as any).data
+    },
   })
   const shape = useRef<ShapeRef>(null)
   const tool = useRef<ToolRef>(null)
 
   const reset = ({ userSelectComponents, page }: any) => {
+    staticData.current.page = page
+    staticData.current.components = userSelectComponents
     setState(draft => {
       draft.components = userSelectComponents
       draft.page = page
@@ -107,16 +112,16 @@ function MMTemplate(props: MMTemplateProps) {
         schema: data.schema,
       }
     }
-    const { index = 0, isChild, layer = [] } = getComponentById(state.components, currentId) || {}
+    const { index = 0, isChild, layer = [] } = getComponentById(staticData.current.components, currentId) || {}
     if (index === -1) return
     if (isChild) {
-      let path = layer.toString().replace(/,/, '.children.')
+      const path = layer.toString().replace(/,/, '.children.')
       setState(draft => {
         set(draft.components, path, newComponent)
       })
       return
     }
-    if (state.components.length) {
+    if (staticData.current.components.length) {
       setState(draft => {
         draft.components.splice(type === 'top' ? index : index + 1, 0, newComponent)
       })
@@ -125,90 +130,94 @@ function MMTemplate(props: MMTemplateProps) {
         draft.components = [newComponent]
       })
     }
-    postMsgToParent({
-      type: SET_HISTORY, data: {
-        ...state.components,
-        actionType: '新增组件',
-      }
-    })
+    onChangeParentState('新增组件')
   }
 
   function deleteComponent({ currentId, nextId }: { currentId: string, nextId: string }) {
     // 暂时不让全部删除
-    if (state.components.length === 1) {
+    if (staticData.current.components.length === 1) {
       message.info(`这是最后一个啦，不能再删啦～`).then()
       return
     }
-    const { index } = getComponentById(state.components, currentId) || {}
+    const { index } = getComponentById(staticData.current.components, currentId) || {}
     if (index === -1) return
     setState(draft => {
       draft.components.splice(index, 1);
     })
     staticData.current.currentId = nextId
-    postMsgToParent({
-      type: SET_HISTORY, data: {
-        ...state.components,
-        actionType: '删除组件',
-      }
-    })
+    setCurrentComponent({ currentId: nextId })
+    onChangeParentState('删除组件')
   }
 
   function sortComponent({ currentId, nextId }: { currentId: string, nextId: string }) {
-    const { index } = getComponentById(state.components, currentId) || {}
-    const { index: next } = getComponentById(state.components, nextId) || {}
+    const { index } = getComponentById(staticData.current.components, currentId) || {}
+    const { index: next } = getComponentById(staticData.current.components, nextId) || {}
     if (index === -1) return
     setState(draft => {
-      const tem = state.components[next]
-      draft.components.splice(next, 1, state.components[index])
+      const tem = staticData.current.components[next]
+      draft.components.splice(next, 1, staticData.current.components[index])
       draft.components.splice(index, 1, tem)
     })
     staticData.current.currentId = nextId
-    postMsgToParent({
-      type: SET_HISTORY, data: {
-        ...state.components,
-        actionType: '移动组件',
-      }
-    })
+    setCurrentComponent({ currentId })
+    onChangeParentState('移动组件')
   }
 
   function copyComponent({ currentId, nextId }: { currentId: string, nextId: string }) {
-    const { index } = getComponentById(state.components, currentId) || {}
+    const { index } = getComponentById(staticData.current.components, currentId) || {}
     if (index === -1) return
-    const newComponent = cloneDeep(state.components[index])
+    const newComponent = cloneDeep(staticData.current.components[index])
     newComponent.id = `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${uuid()}`
     setState(draft => {
       draft.components.splice(index, 0, newComponent)
     })
     staticData.current.currentId = nextId
-    postMsgToParent({
-      type: SET_HISTORY, data: {
-        ...state.components,
-        actionType: '复制组件',
-      }
-    })
+    setCurrentComponent({ currentId: nextId })
+    onChangeParentState('复制组件')
   }
 
   const changeProps = ({ type, props }: { type: string, props: any }) => {
     if (type === '__page') {
-
-    } else {
-      const { index } = getComponentById(state.components, staticData.current.currentId) || {}
-      if (index === -1) return
-      state.components[index]['props'] = props
+      return
     }
+    const { index, layer, isChild } = getComponentById(staticData.current.components, staticData.current.currentId) || {}
+    if (index === -1) return
+    const components = cloneDeep(staticData.current.components)
+    components[index].props = props
+    // 如果新增layout，同样新增children
+    const layoutLen = components[index].props.layout?.length
+    const childrenLen = components[index].children?.length
+    if (typeof layoutLen === 'number' && typeof childrenLen === 'number' && layoutLen > childrenLen) {
+      components[index].children?.splice(childrenLen - 1, 0, ...generateChildren(layoutLen - childrenLen))
+    }
+    staticData.current.components = components
+    const currentComponent = getCurrentComponent({ state: staticData.current, index, layer, isChild })
+    staticData.current.currentComponent = currentComponent
+    setState(draft => {
+      draft.components = components
+      onChangeParentState('更新属性')
+    })
   }
 
-  function setCurrentComponent({ currentId, isChild }: { currentId: string, isChild?: boolean }) {
-    // staticData.current.currentId = currentId
-    const { index, layer = [] } = getComponentById(state.components, currentId) || {}
-    postMsgToParent({ type: SET_CURRENTCOMPONENT, data: { currentId } })
-    setState(draft => {
-      draft.currentComponent = handleCurrentComponent({ state, index, isChild, layer })
-    })
+  function setCurrentComponent({ currentId }: { currentId: string }) {
+    staticData.current.currentId = currentId
+    const { index, layer = [], isChild } = getComponentById(staticData.current.components, currentId) || {}
+    const currentComponent = getCurrentComponent({ state: staticData.current, index, layer, isChild })
+    staticData.current.currentComponent = currentComponent
+    onChangeParentState('选中组件')
+  }
+
+  const onChangeParentState = (actionType: string) => {
     postMsgToParent({
-      type: SET_HISTORY, data: {
-        ...state.components,
-        actionType: '选中组件',
+      type: SET_CONFIG, data: {
+        components: staticData.current.components,
+        currentId: staticData.current.currentId,
+        currentComponent: staticData.current.currentComponent,
+        history: {
+          components: staticData.current.components,
+          page: staticData.current.page,
+          actionType: actionType,
+        }
       }
     })
   }
@@ -221,7 +230,7 @@ function MMTemplate(props: MMTemplateProps) {
   const onRemoteComponentLoad = ({ config, name, js, css, schema }: any) => {
     if (!state.isEdit) return;
     // name => [componentName]_v[版本号]
-    const has = state.remoteComponents.some((item: any) => `${name}` === `${item.name}`);
+    const has = staticData.current.remoteComponents.some((item: any) => `${name}` === `${item.name}`);
     if (!has) {
       const data = {
         config,
@@ -231,22 +240,20 @@ function MMTemplate(props: MMTemplateProps) {
         name,
         props: config.data,
       }
-      setState(draft => {
-        draft.remoteComponents.push(data)
-      })
+      staticData.current.remoteComponents.push(data)
       postMsgToParent({ type: 'onRemoteComponentLoad', data })
     }
   }
 
   const setIframeComponents = ({ components, projectName }: any) => {
-    // 重置子页面ID，不能和父页面的ID一样
+    staticData.current.page.projectName = projectName
     setState(draft => {
       draft.components = components
       draft.page.projectName = projectName
     })
   }
 
-  // 接收父页面的事件回调
+  // 接收父页面的事件
   const handle = {
     reset,
     changeProps,
@@ -369,10 +376,14 @@ function MMTemplate(props: MMTemplateProps) {
           }
           if (type === 'click') {
             staticData.current.currentId = currentId
+            computedShapeAndToolStyle(true)
+            isChild && tool.current?.hideTool()
+            setCurrentComponent({ currentId })
           }
           if (type === 'drop') {
             if (isChild) {
               clearDraggingCls(element, style.dragging)
+              tool.current?.hideTool()
             }
             staticData.current.currentId = currentId
             const data = (e as React.DragEvent<HTMLDivElement>)?.dataTransfer?.getData('text/plain')
@@ -380,18 +391,15 @@ function MMTemplate(props: MMTemplateProps) {
             const dragData = JSON.parse(data)
             addComponent({
               data: dragData,
-              currentId: staticData.current.currentId,
+              currentId,
               dragId: dragData.id,
               type: isTopOrBottom(e, element)
             })
             // 添加组件完成后，ID被替换成了拖拽过来的了
             staticData.current.currentId = dragData.id
-          }
-          if (['click', 'drop'].includes(type)) {
-            computedShapeAndToolStyle(type === 'click')
-            // 布局容器暂不支持直接更改顺序等操作
-            isChild && tool.current?.hideTool()
-            setCurrentComponent({ currentId: staticData.current.currentId, isChild })
+            staticData.current.hoverCurrentId = dragData.id
+            computedShapeAndToolStyle()
+            requestIdleCallback(() => setCurrentComponent({ currentId: dragData.id }))
           }
           callback?.(staticData.current.currentId);
           break
@@ -403,7 +411,7 @@ function MMTemplate(props: MMTemplateProps) {
   }
 
   const onClick: React.MouseEventHandler<HTMLDivElement> = (e) => {
-    handleEvent(e, sliderView.current, staticData.current.selectCb)
+    handleEvent(e, sliderView.current)
   }
   const onMouseOver: React.MouseEventHandler<HTMLDivElement> = (e) => {
     handleEvent(e, sliderView.current)
@@ -445,7 +453,6 @@ function MMTemplate(props: MMTemplateProps) {
   const onSortComponent = (type: 'up' | 'down') => {
     const nextId = type === 'up' ? getPreIdByPreNode(staticData.current.currentId) : getNextIdByNextNode(staticData.current.currentId)
     sortComponent({ currentId: staticData.current.currentId, nextId })
-    setCurrentComponent({ currentId: staticData.current.currentId })
     computedShapeAndToolStyle()
   }
 
@@ -454,7 +461,6 @@ function MMTemplate(props: MMTemplateProps) {
       nextId: getNextIdByNextNode(staticData.current.currentId),
       currentId: staticData.current.currentId
     })
-    setCurrentComponent({ currentId: staticData.current.currentId })
     computedShapeAndToolStyle()
   }
 
@@ -463,66 +469,56 @@ function MMTemplate(props: MMTemplateProps) {
       nextId: getNextIdByNextNode(staticData.current.currentId),
       currentId: staticData.current.currentId
     })
-    setCurrentComponent({ currentId: staticData.current.currentId })
     computedShapeAndToolStyle()
   }
 
-  useEffect(() => {
-    if (!state.isEdit) return;
-    window.addEventListener('message', onMessage);
-    return () => {
-      window.removeEventListener('message', onMessage)
-    }
-  }, [])
+  const init = () => {
+    // 设置模板组件默认列表
+    const components = initialComponents(props.children)
+    staticData.current.currentId = components?.[0]?.id
+    staticData.current.components = components
+    setCurrentComponent({ currentId: staticData.current.currentId })
+    setState(draft => {
+      // 确保只更新一次
+      draft.components = components
+      onChangeParentState('初始化')
+      requestIdleCallback(() => computedShapeAndToolStyle(true))
+    })
+  }
 
-  useEffect(() => {
-    // 预览
+  const loadPreview = () => {
     if (isPreview && baseUrl && pageId) {
       xhrGet(`${baseUrl}/project/preview?id=${pageId}`, (res) => {
         const data = res?.data?.[0]?.pageConfig
+        staticData.current.page = data.pageData
+        document.title = staticData.current.page.projectName
         setState(draft => {
           draft.components = data.userSelectComponents
           draft.page = data.pageData
         })
       });
-      return;
     }
-  }, [])
+  }
 
   useEffect(() => {
-    // 设置模板组件默认列表
-    const components = initialComponents(props.children)
-    staticData.current.currentId = components?.[0]?.id
-    setState(draft => {
-      // 确保只更新一次
-      draft.components = components
-      postMsgToParent({
-        type: "onLoad",
-        data: { components, currentId: staticData.current.currentId }
-      })
-    })
-    // 设置页面标题
-    document.title = state.page.projectName
+    init()
+    loadPreview()
     window.addEventListener('resize', onResize)
     const resizeObserver = new ResizeObserver(() => computedShapeAndToolStyle())
     sliderView.current && resizeObserver.observe(sliderView.current)
     editContainer.current?.addEventListener('scroll', onScroll)
+    state.isEdit && window.addEventListener('message', onMessage);
     return () => {
       window.removeEventListener('resize', onResize)
       editContainer.current?.addEventListener('scroll', onScroll)
       resizeObserver.disconnect()
+      state.isEdit && window.removeEventListener('message', onMessage)
     }
   }, [])
 
   useEffect(() => {
-    postMsgToParent({
-      type: SET_CONFIG, data: {
-        components: state.components,
-        currentId: staticData.current.currentId,
-        currentComponent: state.currentComponent
-      }
-    })
-  }, [state])
+    staticData.current.components = state.components
+  }, [state.components])
 
   if (!state.isEdit) return <>{renderComponents(state.components, onRemoteComponentLoad, onEvent, state.isEdit)}</>
 
@@ -553,6 +549,7 @@ function MMTemplate(props: MMTemplateProps) {
           onDel={() => onDeleteComponent()}
         />
       } />
+      {/* <div className={style.debug}>{JSON.stringify(staticData.current.currentComponent)}</div> */}
     </div>
   )
 }

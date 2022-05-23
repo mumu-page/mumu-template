@@ -39,7 +39,8 @@ function MMGrid(props: MMBannerProps) {
   const { gutter = 0, vGutter = 0, colCount = 3, rowCount = 3, id, onEvent, isEdit, children, onRemoteComponentLoad, layout = defaultLayout } = props
   const [cells, setCells] = useState<React.ReactElement[]>([])
   const grid = useRef<HTMLDivElement>(null)
-
+  console.log(children);
+  
   const getItem = (index: number) => {
     let cellElement: string | React.ReactNode
     const item = children ? children[index] : null
@@ -47,7 +48,7 @@ function MMGrid(props: MMBannerProps) {
       cellElement = baseRenderComponent({ isChild: true, component: item, index, mapping: baseComponents, onRemoteComponentLoad, onEvent, isEdit })
     }
     if (isEdit) {
-      const _id = item?.id || `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${index}_placeholder`
+      const _id = item?.id || `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${uuid()}_placeholder`
       return <div
         className={style.mmDroppablePlaceholder}
         data-index={index}

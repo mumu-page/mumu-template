@@ -57,12 +57,12 @@ export const baseRenderComponent = (params: Params) => {
     {React.createElement(
       Result,
       {
-        ...(component.props || {}),
+        ...component.props,
         id: component.id,
         config: component.config,
         onRemoteComponentLoad,
         onEvent,
-        isEdit: isEdit,
+        isEdit,
         children: component.children
       },
     )}
