@@ -30,6 +30,33 @@ export const REMOTE_COMPONENT_LOADER_NAME = 'mm-remote-component-loader'
 export const SET_HISTORY = 'setHistory'
 export const SET_CONFIG = 'setConfig'
 
+export const tempPageId = `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${uuid()}`
+
+export const tempPageSchema = {
+  "type": "object",
+  "properties": {
+    "projectName": {
+      "title": "页面名称",
+      "type": "string"
+    },
+    "backgroundColor": {
+      "title": "背景色",
+      "type": "string",
+      "format": "color"
+    },
+    "padding": {
+      "title": "内边距",
+      "type": "number",
+      "widget": "slider"
+    },
+    "margin": {
+      "title": "外边距",
+      "type": "number",
+      "widget": "slider"
+    },
+  }
+}
+
 export interface State {
   init: boolean,
   components: Component[]
@@ -140,25 +167,13 @@ export function clearDraggingCls(element: Element, cls: string) {
   })
 }
 
-export function getChildItem() {
-  return {
-    name: GRID_PLACEHOLDER,
-    description: '单元格占位',
-    id: `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${uuid()}`,
-    props: {},
-    schema: {},
-  }
-}
-
-export function generateChildren(children: any[] | number) {
-  if (typeof children === 'number') {
-    return Array(children).fill(1).map(() => getChildItem())
-  }
+export function generateChildren(children: any[]) {
   return Array.isArray(children) ? children.map((item) => ({
     ...item,
     id: `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${uuid()}`,
     props: {
-      children: [getChildItem()]
+      ...item.props,
+      children: item.props.children?.map((i: any) => ({ ...i, id: `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${uuid()}` }))
     }
   })) : []
 }
@@ -169,18 +184,19 @@ export const initialComponents = (children: React.ReactNode[]) => {
     : children.map((c: any, index: number) => {
       const customName = c.type.componentName || c.type.type.componentName
       const name = kebabCase(customName);
-      const { data, schema, snapshot, description } = config.componentConfig.filter(config => config.name === name)?.[0] || {};
-      return {
+      const { data, schema, snapshot, description, ...rest } = config.componentConfig.filter(config => config.name === name)?.[0] || {};
+      const ret = {
         name,
         id: `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${uuid()}_temp`,
-        props: {
-          ...data,
-          children: generateChildren(data?.children)
-        },
+        props: data,
         schema,
         snapshot,
         description,
       }
+      if (ret.props.children) {
+        ret.props.children = generateChildren(ret.props.children)
+      }
+      return ret
     })
 }
 
@@ -209,7 +225,7 @@ export function getComponentById(userSelectComponents: Component[], id: string, 
 export function getCurrentComponent({
   currentComponent,
   index,
-  layer
+  layer = []
 }: {
   currentComponent?: Component
   index: number
@@ -218,8 +234,8 @@ export function getCurrentComponent({
   // 没有组件选中，进行页面修改
   if (!currentComponent || index === -1) {
     return {
-      currentComponentSchema: {},
-      component: undefined,
+      currentComponentSchema: tempPageSchema,
+      component: { id: tempPageId, props: { home: true } },
       type: '__page',
     }
   }
@@ -227,6 +243,14 @@ export function getCurrentComponent({
   return {
     currentComponentSchema: currentComponent.schema,
     component: currentComponent,
-    layer
+    layer: [
+      // 插入首页
+      {
+        id: tempPageId,
+        props: { home: true },
+        schema: tempPageSchema
+      },
+      ...layer
+    ]
   }
 }

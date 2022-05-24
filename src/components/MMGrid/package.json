@@ -62,34 +62,87 @@
         "items": {
           "type": "object",
           "properties": {
+            "name": {
+              "title": "cell",
+              "type": "string",
+              "default": "cell",
+              "hidden": true
+            },
             "description": {
-              "title": "名称",
+              "title": "描述",
               "type": "string",
               "default": "单元格",
               "hidden": true
             },
-            "middle": {
-              "title": "是否居中",
-              "type": "boolean",
-              "default": true
+            "id": {
+              "type": "string",
+              "default": "",
+              "hidden": true
             },
-            "width": {
-              "title": "宽度",
-              "description": "与总列数的占比比例",
-              "type": "number",
-              "widget": "slider",
-              "default": 1,
-              "max": "{{formData.colCount}}",
-              "min": 1
+            "props": {
+              "type": "object",
+              "properties": {
+                "middle": {
+                  "title": "是否居中",
+                  "type": "boolean",
+                  "default": true
+                },
+                "width": {
+                  "title": "宽度",
+                  "description": "与总列数的占比比例",
+                  "type": "number",
+                  "widget": "slider",
+                  "default": 1,
+                  "max": "{{formData.colCount}}",
+                  "min": 1
+                },
+                "height": {
+                  "title": "高度",
+                  "description": "与总行数的占比比例",
+                  "type": "number",
+                  "widget": "slider",
+                  "default": 1,
+                  "max": "{{formData.children.length}}",
+                  "min": 1
+                },
+                "children": {
+                  "type": "object",
+                  "hidden": true,
+                  "default": []
+                }
+              }
             },
-            "height": {
-              "title": "高度",
-              "description": "与总行数的占比比例",
-              "type": "number",
-              "widget": "slider",
-              "default": 1,
-              "max": "{{formData.children.length}}",
-              "min": 1
+            "schema": {
+              "type": "object",
+              "hidden": true,
+              "default": {
+                "type": "object",
+                "properties": {
+                  "middle": {
+                    "title": "是否居中",
+                    "type": "boolean",
+                    "default": true
+                  },
+                  "width": {
+                    "title": "宽度",
+                    "description": "与总列数的占比比例",
+                    "type": "number",
+                    "widget": "slider",
+                    "default": 1,
+                    "max": "{{formData.colCount}}",
+                    "min": 1
+                  },
+                  "height": {
+                    "title": "高度",
+                    "description": "与总行数的占比比例",
+                    "type": "number",
+                    "widget": "slider",
+                    "default": 1,
+                    "max": "{{formData.children.length}}",
+                    "min": 1
+                  }
+                }
+              }
             }
           }
         }
@@ -104,34 +157,232 @@
     "rowCount": 3,
     "children": [
       {
+        "name": "cell",
         "description": "单元格",
-        "middle": true,
-        "width": 1,
-        "height": 2
+        "props": {
+          "middle": true,
+          "width": 1,
+          "height": 2,
+          "children": []
+        },
+        "schema": {
+          "type": "object",
+          "properties": {
+            "middle": {
+              "title": "是否居中",
+              "type": "boolean",
+              "default": true
+            },
+            "width": {
+              "title": "宽度",
+              "description": "与总列数的占比比例",
+              "type": "number",
+              "widget": "slider",
+              "default": 1,
+              "max": 3,
+              "min": 1
+            },
+            "height": {
+              "title": "高度",
+              "description": "与总行数的占比比例",
+              "type": "number",
+              "widget": "slider",
+              "default": 1,
+              "max": 6,
+              "min": 1
+            }
+          }
+        }
       },
       {
+        "name": "cell",
         "description": "单元格",
-        "middle": true,
-        "width": 2,
-        "height": 1
+        "props": {
+          "middle": true,
+          "width": 2,
+          "height": 1,
+          "children": []
+        },
+        "schema": {
+          "type": "object",
+          "properties": {
+            "middle": {
+              "title": "是否居中",
+              "type": "boolean",
+              "default": true
+            },
+            "width": {
+              "title": "宽度",
+              "description": "与总列数的占比比例",
+              "type": "number",
+              "widget": "slider",
+              "default": 1,
+              "max": 3,
+              "min": 1
+            },
+            "height": {
+              "title": "高度",
+              "description": "与总行数的占比比例",
+              "type": "number",
+              "widget": "slider",
+              "default": 1,
+              "max": 6,
+              "min": 1
+            }
+          }
+        }
       },
       {
+        "name": "cell",
         "description": "单元格",
-        "middle": true,
-        "width": 2,
-        "height": 1
+        "props": {
+          "middle": true,
+          "width": 2,
+          "height": 1,
+          "children": []
+        },
+        "schema": {
+          "type": "object",
+          "properties": {
+            "middle": {
+              "title": "是否居中",
+              "type": "boolean",
+              "default": true
+            },
+            "width": {
+              "title": "宽度",
+              "description": "与总列数的占比比例",
+              "type": "number",
+              "widget": "slider",
+              "default": 1,
+              "max": 3,
+              "min": 1
+            },
+            "height": {
+              "title": "高度",
+              "description": "与总行数的占比比例",
+              "type": "number",
+              "widget": "slider",
+              "default": 1,
+              "max": 6,
+              "min": 1
+            }
+          }
+        }
       },
       {
+        "name": "cell",
         "description": "单元格",
-        "middle": true
+        "props": {
+          "middle": true,
+          "width": 1,
+          "height": 1,
+          "children": []
+        },
+        "schema": {
+          "type": "object",
+          "properties": {
+            "middle": {
+              "title": "是否居中",
+              "type": "boolean",
+              "default": true
+            },
+            "width": {
+              "title": "宽度",
+              "description": "与总列数的占比比例",
+              "type": "number",
+              "widget": "slider",
+              "default": 1,
+              "max": 3,
+              "min": 1
+            },
+            "height": {
+              "title": "高度",
+              "description": "与总行数的占比比例",
+              "type": "number",
+              "widget": "slider",
+              "default": 1,
+              "max": 6,
+              "min": 1
+            }
+          }
+        }
       },
       {
+        "name": "cell",
         "description": "单元格",
-        "middle": true
+        "props": {
+          "middle": true,
+          "width": 1,
+          "height": 1,
+          "children": []
+        },
+        "schema": {
+          "type": "object",
+          "properties": {
+            "middle": {
+              "title": "是否居中",
+              "type": "boolean",
+              "default": true
+            },
+            "width": {
+              "title": "宽度",
+              "description": "与总列数的占比比例",
+              "type": "number",
+              "widget": "slider",
+              "default": 1,
+              "max": 3,
+              "min": 1
+            },
+            "height": {
+              "title": "高度",
+              "description": "与总行数的占比比例",
+              "type": "number",
+              "widget": "slider",
+              "default": 1,
+              "max": 6,
+              "min": 1
+            }
+          }
+        }
       },
       {
+        "name": "cell",
         "description": "单元格",
-        "middle": true
+        "props": {
+          "middle": true,
+          "width": 1,
+          "height": 1,
+          "children": []
+        },
+        "schema": {
+          "type": "object",
+          "properties": {
+            "middle": {
+              "title": "是否居中",
+              "type": "boolean",
+              "default": true
+            },
+            "width": {
+              "title": "宽度",
+              "description": "与总列数的占比比例",
+              "type": "number",
+              "widget": "slider",
+              "default": 1,
+              "max": 3,
+              "min": 1
+            },
+            "height": {
+              "title": "高度",
+              "description": "与总行数的占比比例",
+              "type": "number",
+              "widget": "slider",
+              "default": 1,
+              "max": 6,
+              "min": 1
+            }
+          }
+        }
       }
     ]
   }

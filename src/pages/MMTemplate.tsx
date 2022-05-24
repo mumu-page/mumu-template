@@ -22,7 +22,7 @@ import {
   getComponentById,
   getCurrentComponent,
   SET_CONFIG,
-  getChildItem,
+  tempPageId,
 } from './utils';
 import { renderComponents } from '@/components/mapping';
 import { cloneDeep, set } from 'lodash';
@@ -116,7 +116,7 @@ function MMTemplate(props: MMTemplateProps) {
     const { index = 0, isChild, layer = [] } = getComponentById(staticData.current.components, currentId) || {}
     if (index === -1) return
     if (isChild) {
-      const path = layer.map(item => item.index).toString().replace(/,/g, '.props.children.')
+      const path = layer.map(item => item.index).toString().replace(/,/g, '.props.children.') + '.props.children.0'
       setState(draft => {
         set(draft.components, path, newComponent)
       })
@@ -192,7 +192,8 @@ function MMTemplate(props: MMTemplateProps) {
           id: `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${uuid()}`,
           props: {
             // 合并children
-            children: currentChildren ? currentChildren : [getChildItem()]
+            ...item.props,
+            children: currentChildren ? currentChildren : item?.children?.map((i: any) => ({ ...i, id: `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${uuid()}`, }))
           }
         }
       })
@@ -216,8 +217,10 @@ function MMTemplate(props: MMTemplateProps) {
 
   function setCurrentComponent({ currentId }: { currentId: string }) {
     staticData.current.currentId = currentId
+    staticData.current.hoverCurrentId = ''
     const { index, currentComponent, layer } = getComponentById(staticData.current.components, currentId) || {}
     staticData.current.currentComponent = getCurrentComponent({ currentComponent, index, layer })
+    computedShapeAndToolStyle()
     onChangeParentState('选中组件')
   }
 
@@ -227,6 +230,7 @@ function MMTemplate(props: MMTemplateProps) {
         components: staticData.current.components,
         currentId: staticData.current.currentId,
         currentComponent: staticData.current.currentComponent,
+        componentConfig: staticData.current.componentConfig,
         history: {
           components: staticData.current.components,
           page: staticData.current.page,
@@ -270,6 +274,7 @@ function MMTemplate(props: MMTemplateProps) {
   // 接收父页面的事件
   const handle = {
     reset,
+    setCurrentComponent,
     changeProps,
     setIframeComponents
   }
@@ -549,6 +554,8 @@ function MMTemplate(props: MMTemplateProps) {
         onDrop={onDrop}
         ref={sliderView}
         className={style.sliderView}
+        id={tempPageId}
+        data-id={tempPageId}
       >
         {renderComponents(state.components, onRemoteComponentLoad, onEvent, state.isEdit)}
       </div>

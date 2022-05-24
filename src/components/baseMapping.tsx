@@ -8,7 +8,7 @@ import MMRemoteComponentLoader from "./MMRemoteComponentLoader"
 export interface Component {
   id: string
   name: string
-  props: Record<string, string | number | object>
+  props: Record<string, any>
   schema: any
   config?: any
   children?: Component[]
