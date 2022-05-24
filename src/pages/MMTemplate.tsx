@@ -39,7 +39,6 @@ interface MMTemplateProps {
   children: React.ReactNode[]
 }
 
-// ID是唯一的，应该保存ID
 function MMTemplate(props: MMTemplateProps) {
   const [state, setState] = useImmer<State>({
     init: false,
@@ -117,7 +116,7 @@ function MMTemplate(props: MMTemplateProps) {
     const { index = 0, isChild, layer = [] } = getComponentById(staticData.current.components, currentId) || {}
     if (index === -1) return
     if (isChild) {
-      const path = layer.map(item => item.index).toString().replace(/,/, '.props.children.') + '.props.children.0'
+      const path = layer.map(item => item.index).toString().replace(/,/g, '.props.children.')
       setState(draft => {
         set(draft.components, path, newComponent)
       })
@@ -182,22 +181,33 @@ function MMTemplate(props: MMTemplateProps) {
     if (type === '__page') {
       return
     }
-    const { index, currentComponent, layer } = getComponentById(staticData.current.components, staticData.current.currentId) || {}
+    const { index, layer = [], isChild, currentComponent } = getComponentById(staticData.current.components, staticData.current.currentId) || {}
     if (index === -1) return
     // 生成childern和id
     if (Array.isArray(props.children)) {
-      props.children = props.children.map((item: any) => ({
-        ...item,
-        id: `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${uuid()}`,
-        props: {
-          children: item.children ? item.children : [getChildItem()]
+      props.children = props.children.map((item: any, idx: number) => {
+        const currentChildren = currentComponent?.props.children?.[idx]?.props?.children
+        return {
+          ...item,
+          id: `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${uuid()}`,
+          props: {
+            // 合并children
+            children: currentChildren ? currentChildren : [getChildItem()]
+          }
         }
-      }))
+      })
     }
     const components = cloneDeep(staticData.current.components)
-    components[index].props = props
+    // 支持子层的属性修改
+    if (isChild) {
+      const path = layer.map(item => item.index).toString().replace(/,/g, '.props.children.') + '.props'
+      set(components, path, props)
+    } else {
+      components[index].props = props
+    }
     staticData.current.components = components
-    staticData.current.currentComponent = getCurrentComponent({ currentComponent, index, layer })
+    const { index: newIndex, currentComponent: newCurrentComponent, layer: newLayer } = getComponentById(staticData.current.components, staticData.current.currentId) || {}
+    staticData.current.currentComponent = getCurrentComponent({ currentComponent: newCurrentComponent, index: newIndex, layer: newLayer })
     setState(draft => {
       draft.components = components
       onChangeParentState('更新属性')

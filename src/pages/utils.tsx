@@ -22,7 +22,7 @@ export const COMPONENT_ELEMENT_ITEM_ID_PREFIX = 'mm-render-id-_component_'
 /** 设置选中组件 */
 export const SET_CURRENTCOMPONENT = 'setCurrentComponent'
 /** 网格组件占位组件名 */
-export const GRID_PLACEHOLDER = 'grid_placeholder'
+export const GRID_PLACEHOLDER = 'grid-placeholder'
 /** 名称是这个的就是系统组件 */
 export const GLOBAL_COMPONENT_TYPE_NAME = 'global-component'
 /** 远程组件加载器名称 */
@@ -143,6 +143,7 @@ export function clearDraggingCls(element: Element, cls: string) {
 export function getChildItem() {
   return {
     name: GRID_PLACEHOLDER,
+    description: '单元格占位',
     id: `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${uuid()}`,
     props: {},
     schema: {},

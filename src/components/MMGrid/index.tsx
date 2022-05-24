@@ -5,6 +5,7 @@ import Cell, { ICell } from './Cell';
 import { COMPONENT_ELEMENT_ITEM_ID_PREFIX, GRID_PLACEHOLDER } from '@/pages/utils';
 import { uuid } from '@/utils/utils';
 import style from './index.module.less'
+import GridPlaceholder from './GridPlaceholder';
 
 type ChildItem = (ICell & { props: { children: Component[] } })
 
@@ -44,20 +45,21 @@ function MMGrid(props: MMBannerProps) {
 
   const getItem = (cell: ChildItem, index: number) => {
     let cellElement: string | React.ReactNode
-    if (cell.props?.children?.[0]) {
-      cellElement = baseRenderComponent({
-        isChild: true,
-        component: cell.props.children[0],
-        index,
-        mapping: baseComponents,
-        onRemoteComponentLoad,
-        onEvent,
-        isEdit
-      })
-    }
-    if (isEdit) {
-      cellElement = <div
-      >{cellElement || `Column-${index + 1}`}</div>
+    const childItem = cell.props?.children?.[0]
+    if (childItem) {
+      if (childItem.name === GRID_PLACEHOLDER) {
+        cellElement = <GridPlaceholder id={childItem.id} index={index} />
+      } else {
+        cellElement = baseRenderComponent({
+          isChild: true,
+          component: childItem,
+          index,
+          mapping: baseComponents,
+          onRemoteComponentLoad,
+          onEvent,
+          isEdit
+        })
+      }
     }
     return <>{cellElement}</>
   }
@@ -66,6 +68,11 @@ function MMGrid(props: MMBannerProps) {
     if (!Array.isArray(children)) return
     const _cells: React.ReactElement[] = []
     children.forEach((_, index) => {
+      const childItem = _.props?.children?.[0]
+      let className
+      if (isEdit) {
+        className = childItem.name === GRID_PLACEHOLDER ? '' : style.mmDroppablePlaceholder
+      }
       _cells.push(<Cell
         key={_.id}
         id={_.id}
@@ -73,7 +80,7 @@ function MMGrid(props: MMBannerProps) {
         width={_.width}
         height={_.height}
         middle={_.middle}
-        className={isEdit ? style.mmDroppablePlaceholder : ''}
+        className={className}
       >
         {getItem(_, index)}
       </Cell>)
