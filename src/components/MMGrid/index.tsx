@@ -6,6 +6,8 @@ import { COMPONENT_ELEMENT_ITEM_ID_PREFIX, GRID_PLACEHOLDER } from '@/pages/util
 import { uuid } from '@/utils/utils';
 import style from './index.module.less'
 
+type ChildItem = (ICell & { props: { children: Component[] } })
+
 interface MMBannerProps {
   /* 组件ID */
   id?: string
@@ -22,58 +24,62 @@ interface MMBannerProps {
   onRemoteComponentLoad: ({ config, name, js, css, schema }: any) => void
   /* 是否编辑 */
   isEdit?: boolean
-  children?: Component[]
-  layout?: ICell[]
+  /* 布局 */
+  children?: ChildItem[]
 }
 
 const defaultLayout = [
-  { middle: true, width: 1, height: 2 },
-  { middle: true, width: 2, height: 1 },
-  { middle: true, width: 2, height: 1 },
-  { middle: true },
-  { middle: true },
-  { middle: true },
+  { middle: true, width: 1, height: 2, props: { children: [] }, id: `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${uuid()}` },
+  { middle: true, width: 2, height: 1, props: { children: [] }, id: `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${uuid()}` },
+  { middle: true, width: 2, height: 1, props: { children: [] }, id: `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${uuid()}` },
+  { middle: true, props: { children: [] }, id: `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${uuid()}` },
+  { middle: true, props: { children: [] }, id: `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${uuid()}` },
+  { middle: true, props: { children: [] }, id: `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${uuid()}` },
 ]
 
 function MMGrid(props: MMBannerProps) {
-  const { gutter = 0, vGutter = 0, colCount = 3, rowCount = 3, id, onEvent, isEdit, children, onRemoteComponentLoad, layout = defaultLayout } = props
+  const { gutter = 0, vGutter = 0, colCount = 3, rowCount = 3, onEvent, isEdit, children = defaultLayout, onRemoteComponentLoad } = props
   const [cells, setCells] = useState<React.ReactElement[]>([])
   const grid = useRef<HTMLDivElement>(null)
-  console.log(children);
-  
-  const getItem = (index: number) => {
+
+  const getItem = (cell: ChildItem, index: number) => {
     let cellElement: string | React.ReactNode
-    const item = children ? children[index] : null
-    if (item && item.name !== GRID_PLACEHOLDER) {
-      cellElement = baseRenderComponent({ isChild: true, component: item, index, mapping: baseComponents, onRemoteComponentLoad, onEvent, isEdit })
+    if (cell.props?.children?.[0]) {
+      cellElement = baseRenderComponent({
+        isChild: true,
+        component: cell.props.children[0],
+        index,
+        mapping: baseComponents,
+        onRemoteComponentLoad,
+        onEvent,
+        isEdit
+      })
     }
     if (isEdit) {
-      const _id = item?.id || `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${uuid()}_placeholder`
-      return <div
-        className={style.mmDroppablePlaceholder}
-        data-index={index}
-        id={_id}
-        data-id={_id}
+      cellElement = <div
       >{cellElement || `Column-${index + 1}`}</div>
     }
     return <>{cellElement}</>
   }
 
   useEffect(() => {
+    if (!Array.isArray(children)) return
     const _cells: React.ReactElement[] = []
-    layout.forEach((_, index) => {
-      const id = uuid()
+    children.forEach((_, index) => {
       _cells.push(<Cell
-        key={id}
+        key={_.id}
+        id={_.id}
+        dataId={_.id}
         width={_.width}
         height={_.height}
         middle={_.middle}
+        className={isEdit ? style.mmDroppablePlaceholder : ''}
       >
-        {getItem(index)}
+        {getItem(_, index)}
       </Cell>)
     })
     setCells(_cells)
-  }, [colCount, rowCount, children, layout])
+  }, [colCount, rowCount, children])
 
   return (
     <div

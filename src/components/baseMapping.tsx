@@ -62,8 +62,7 @@ export const baseRenderComponent = (params: Params) => {
         config: component.config,
         onRemoteComponentLoad,
         onEvent,
-        isEdit,
-        children: component.children
+        isEdit
       },
     )}
   </div>

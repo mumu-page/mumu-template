@@ -70,6 +70,7 @@ export interface ElementStyle {
 export interface Component {
   id: string
   name: string
+  description: string
   props: { [key: string]: any }
   schema: any
   config?: any
@@ -134,8 +135,8 @@ export function getPreIdByPreNode(id: string) {
  * @param cls 
  */
 export function clearDraggingCls(element: Element, cls: string) {
-  Array.from(element?.parentElement?.parentElement?.children as any).forEach((item: any) => {
-    item?.children?.[0].classList.remove(cls)
+  Array.from(element?.parentElement?.children as any).forEach((item: any) => {
+    item?.classList.remove(cls)
   })
 }
 
@@ -148,11 +149,17 @@ export function getChildItem() {
   }
 }
 
-export function generateChildren(layout: any[] | number) {
-  if (typeof layout === 'number') {
-    return Array(layout).fill(1).map(() => getChildItem())
+export function generateChildren(children: any[] | number) {
+  if (typeof children === 'number') {
+    return Array(children).fill(1).map(() => getChildItem())
   }
-  return Array.isArray(layout) ? layout.map(() => getChildItem()) : []
+  return Array.isArray(children) ? children.map((item) => ({
+    ...item,
+    id: `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${uuid()}`,
+    props: {
+      children: [getChildItem()]
+    }
+  })) : []
 }
 
 export const initialComponents = (children: React.ReactNode[]) => {
@@ -161,81 +168,64 @@ export const initialComponents = (children: React.ReactNode[]) => {
     : children.map((c: any, index: number) => {
       const customName = c.type.componentName || c.type.type.componentName
       const name = kebabCase(customName);
-      const { data, schema, snapshot, description, } = config.componentConfig.filter(config => config.name === name)?.[0] || {};
+      const { data, schema, snapshot, description } = config.componentConfig.filter(config => config.name === name)?.[0] || {};
       return {
         name,
         id: `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${uuid()}_temp`,
-        props: data,
+        props: {
+          ...data,
+          children: generateChildren(data?.children)
+        },
         schema,
         snapshot,
         description,
-        children: generateChildren(data?.layout)
       }
     })
 }
 
-export function getComponentById(userSelectComponents: Component[], id: string, isChild = false, parentIndex = -1, layer: number[] = []): {
-  element: Component,
+export function getComponentById(userSelectComponents: Component[], id: string, isChild = false, parentIndex = -1, layer: (Component & { index: number })[] = []): {
+  currentComponent: Component,
   index: number,
   isChild: boolean,
   parentIndex?: number,
-  layer?: number[],
-} | { index: -1, element: undefined, isChild: undefined, parentIndex: undefined, layer: undefined } {
+  layer?: (Component & { index: number })[]
+} | { index: -1, currentComponent: undefined, isChild: undefined, parentIndex: undefined, layer: undefined } {
   for (let index = 0; index < userSelectComponents.length; index++) {
     const element = userSelectComponents[index];
-    if (element.children) {
-      const ret = getComponentById(element.children, id, true, index, [...layer, index])
+    if (element.props.children) {
+      const ret = getComponentById(element.props.children, id, true, index, [...layer, { ...element, index }])
       // 在子项中找到了就返回就行
       if (ret.index !== -1) return ret
     }
     if (element.id === id) {
-      return { element, index, isChild, parentIndex, layer: [...layer, index] }
+      return { currentComponent: element, index, isChild, parentIndex, layer: [...layer, { ...element, index }] }
     }
 
   }
-  return { index: -1, element: undefined, isChild: undefined, parentIndex: undefined, layer: undefined }
+  return { index: -1, currentComponent: undefined, isChild: undefined, parentIndex: undefined, layer: undefined }
 }
 
 export function getCurrentComponent({
-  state,
-  layer = [],
+  currentComponent,
   index,
-  isChild = false
+  layer
 }: {
-  state: RefData,
-  layer?: number[],
-  index: number,
-  isChild?: boolean | undefined
+  currentComponent?: Component
+  index: number
+  layer?: (Component & { index: number })[]
 }) {
   // 没有组件选中，进行页面修改
-  if (!isChild && index === -1) {
+  if (!currentComponent || index === -1) {
     return {
       currentComponentSchema: {},
       component: undefined,
       type: '__page',
     }
   }
-  // 选中的组件
-  let selectComponent: Component
-  if (isChild) {
-    let path = layer.toString().replace(/,/, '.children.')
-    selectComponent = get(state.components, path);
-  } else {
-    selectComponent = state.components[index]
-  }
-  if (!selectComponent) return
-  let currentComponentSchema: any = {}
-  // 远程组件
-  if (selectComponent.name === REMOTE_COMPONENT_LOADER_NAME) {
-    const _component = state.remoteComponents?.filter((c: any) => `${c.name}` === `${selectComponent?.config?.name}`)?.[0]
-    currentComponentSchema = _component?.schema || {};
-  } else {
-    const _component = state.components.filter((c: any) => c.name === selectComponent.name)?.[0]
-    currentComponentSchema = _component?.schema;
-  }
   // 当前修改项，用于 form-render
   return {
-    currentComponentSchema,
-    component: selectComponent,
+    currentComponentSchema: currentComponent.schema,
+    component: currentComponent,
+    layer
   }
 }

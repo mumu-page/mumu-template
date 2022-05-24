@@ -22,7 +22,7 @@ import {
   getComponentById,
   getCurrentComponent,
   SET_CONFIG,
-  generateChildren,
+  getChildItem,
 } from './utils';
 import { renderComponents } from '@/components/mapping';
 import { cloneDeep, set } from 'lodash';
@@ -102,6 +102,7 @@ function MMTemplate(props: MMTemplateProps) {
         name: REMOTE_COMPONENT_LOADER_NAME,
         id: dragId,
         props: data.props,
+        description: data.description,
         config: data
       }
     } else {
@@ -109,13 +110,14 @@ function MMTemplate(props: MMTemplateProps) {
         name: data.name,
         props: data.props,
         id: dragId,
+        description: data.description,
         schema: data.schema,
       }
     }
     const { index = 0, isChild, layer = [] } = getComponentById(staticData.current.components, currentId) || {}
     if (index === -1) return
     if (isChild) {
-      const path = layer.toString().replace(/,/, '.children.')
+      const path = layer.map(item => item.index).toString().replace(/,/, '.props.children.') + '.props.children.0'
       setState(draft => {
         set(draft.components, path, newComponent)
       })
@@ -180,19 +182,22 @@ function MMTemplate(props: MMTemplateProps) {
     if (type === '__page') {
       return
     }
-    const { index, layer, isChild } = getComponentById(staticData.current.components, staticData.current.currentId) || {}
+    const { index, currentComponent, layer } = getComponentById(staticData.current.components, staticData.current.currentId) || {}
     if (index === -1) return
+    // 生成childern和id
+    if (Array.isArray(props.children)) {
+      props.children = props.children.map((item: any) => ({
+        ...item,
+        id: `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${uuid()}`,
+        props: {
+          children: item.children ? item.children : [getChildItem()]
+        }
+      }))
+    }
     const components = cloneDeep(staticData.current.components)
     components[index].props = props
-    // 如果新增layout，同样新增children
-    const layoutLen = components[index].props.layout?.length
-    const childrenLen = components[index].children?.length
-    if (typeof layoutLen === 'number' && typeof childrenLen === 'number' && layoutLen > childrenLen) {
-      components[index].children?.splice(childrenLen - 1, 0, ...generateChildren(layoutLen - childrenLen))
-    }
     staticData.current.components = components
-    const currentComponent = getCurrentComponent({ state: staticData.current, index, layer, isChild })
-    staticData.current.currentComponent = currentComponent
+    staticData.current.currentComponent = getCurrentComponent({ currentComponent, index, layer })
     setState(draft => {
       draft.components = components
       onChangeParentState('更新属性')
@@ -201,9 +206,8 @@ function MMTemplate(props: MMTemplateProps) {
 
   function setCurrentComponent({ currentId }: { currentId: string }) {
     staticData.current.currentId = currentId
-    const { index, layer = [], isChild } = getComponentById(staticData.current.components, currentId) || {}
-    const currentComponent = getCurrentComponent({ state: staticData.current, index, layer, isChild })
-    staticData.current.currentComponent = currentComponent
+    const { index, currentComponent, layer } = getComponentById(staticData.current.components, currentId) || {}
+    staticData.current.currentComponent = getCurrentComponent({ currentComponent, index, layer })
     onChangeParentState('选中组件')
   }
 
