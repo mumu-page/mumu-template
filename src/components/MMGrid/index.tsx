@@ -30,7 +30,7 @@ function MMGrid(props: MMBannerProps) {
   const grid = useRef<HTMLDivElement>(null)
 
   const getItem = (cell: Component, index: number) => {
-    let cellElement: string | React.ReactNode = `Column-${index + 1}`
+    let cellElement: string | React.ReactNode
 
     const childItem = cell?.props?.children?.[0]
     if (childItem) {
@@ -43,6 +43,8 @@ function MMGrid(props: MMBannerProps) {
         onEvent,
         isEdit
       })
+    } else if(isEdit) {
+      cellElement = `Column-${index + 1}`
     }
     return <>{cellElement}</>
   }

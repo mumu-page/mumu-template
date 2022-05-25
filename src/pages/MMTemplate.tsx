@@ -209,7 +209,7 @@ function MMTemplate(props: MMTemplateProps) {
 
   function setCurrentComponent({ currentId }: { currentId: string }) {
     staticData.current.currentId = currentId
-    staticData.current.hoverCurrentId = ''
+    shape.current?.hideShapeHover()
     const { index, currentComponent, layer } = getComponentById(staticData.current.components, currentId) || {}
     staticData.current.currentComponent = getCurrentComponent({ currentComponent, index, layer })
     computedShapeAndToolStyle()
