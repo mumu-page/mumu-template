@@ -181,22 +181,14 @@ function MMTemplate(props: MMTemplateProps) {
     if (type === '__page') {
       return
     }
-    const { index, layer = [], isChild, currentComponent } = getComponentById(staticData.current.components, staticData.current.currentId) || {}
+    const { index, layer = [], isChild } = getComponentById(staticData.current.components, staticData.current.currentId) || {}
     if (index === -1) return
-    // 生成childern和id
+    // 生成id
     if (Array.isArray(props.children)) {
-      props.children = props.children.map((item: any, idx: number) => {
-        const currentChildren = currentComponent?.props.children?.[idx]?.props?.children
-        return {
-          ...item,
-          id: `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${uuid()}`,
-          props: {
-            // 合并children
-            ...item.props,
-            children: currentChildren ? currentChildren : item?.children?.map((i: any) => ({ ...i, id: `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${uuid()}`, }))
-          }
-        }
-      })
+      props.children = props.children.map((item: any) => ({
+        ...item,
+        id: `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${uuid()}`,
+      }))
     }
     const components = cloneDeep(staticData.current.components)
     // 支持子层的属性修改

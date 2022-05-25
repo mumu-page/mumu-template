@@ -170,11 +170,7 @@ export function clearDraggingCls(element: Element, cls: string) {
 export function generateChildren(children: any[]) {
   return Array.isArray(children) ? children.map((item) => ({
     ...item,
-    id: `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${uuid()}`,
-    props: {
-      ...item.props,
-      children: item.props.children?.map((i: any) => ({ ...i, id: `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${uuid()}` }))
-    }
+    id: `${COMPONENT_ELEMENT_ITEM_ID_PREFIX}${uuid()}`
   })) : []
 }
 
