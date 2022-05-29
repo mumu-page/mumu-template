@@ -1,7 +1,7 @@
 import { config, uuid } from "@/utils/utils"
 import kebabCase from "lodash.kebabcase"
-import { get } from 'lodash';
 
+export const ON_LOAD = 'onload'
 /** 删除组件 */
 export const DELETE_COMPONENT = 'deleteComponent'
 /** 获取配置 */

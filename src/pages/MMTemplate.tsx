@@ -23,6 +23,7 @@ import {
   getCurrentComponent,
   SET_CONFIG,
   tempPageId,
+  ON_LOAD,
 } from './utils';
 import { renderComponents } from '@/components/mapping';
 import { cloneDeep, set } from 'lodash';
@@ -257,10 +258,13 @@ function MMTemplate(props: MMTemplateProps) {
 
   const setIframeComponents = ({ components, projectName }: any) => {
     staticData.current.page.projectName = projectName
+    staticData.current.components = components
     setState(draft => {
       draft.components = components
       draft.page.projectName = projectName
     })
+    computedShapeAndToolStyle(true)
+    setCurrentComponent({ currentId: staticData.current.currentId })
   }
 
   // 接收父页面的事件
@@ -491,7 +495,7 @@ function MMTemplate(props: MMTemplateProps) {
     setState(draft => {
       // 确保只更新一次
       draft.components = components
-      onChangeParentState('初始化')
+      postMsgToParent({ type: ON_LOAD, data: { components, currentId: staticData.current.currentId } })
       computedShapeAndToolStyle(true)
       setCurrentComponent({ currentId: staticData.current.currentId })
     })
@@ -551,7 +555,17 @@ function MMTemplate(props: MMTemplateProps) {
       >
         {renderComponents(state.components, onRemoteComponentLoad, onEvent, state.isEdit)}
       </div>
-      <Shape ref={shape} />
+      <Shape ref={shape} tool={
+        <Tool
+          ref={tool}
+          isTop={state.isTop}
+          isBottom={state.isBottom}
+          height={state.toolStyle.height}
+          onMove={(type) => onSortComponent(type)}
+          onCopy={() => onCopyComponent()}
+          onDel={() => onDeleteComponent()}
+        />
+      } />
       {/* <div className={style.debug}>{JSON.stringify(staticData.current.currentComponent)}</div> */}
     </div>
   )
