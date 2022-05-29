@@ -47,7 +47,6 @@ export const baseRenderComponent = (params: Params) => {
 
   if (!Result) return null
   return <div
-    data-layout={component.props?._layout}
     data-id={component.id}
     data-isTop={isTop}
     data-isBottom={isBottom}

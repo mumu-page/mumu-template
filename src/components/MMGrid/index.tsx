@@ -3,6 +3,7 @@ import { baseComponents, Component, baseRenderComponent } from '../baseMapping';
 import Grid from './Grid';
 import Cell from './Cell';
 import style from './index.module.less'
+import config from './package.json'
 
 interface MMBannerProps {
   /* 组件ID */
@@ -25,7 +26,7 @@ interface MMBannerProps {
 }
 
 function MMGrid(props: MMBannerProps) {
-  const { gutter = 0, vGutter = 0, colCount = 3, rowCount = 3, onEvent, isEdit, children = [], onRemoteComponentLoad } = props
+  const { gutter = 0, vGutter = 0, colCount = 3, rowCount = 3, onEvent, isEdit, children = config.data.children, onRemoteComponentLoad } = props
   const [cells, setCells] = useState<React.ReactElement[]>([])
   const grid = useRef<HTMLDivElement>(null)
 

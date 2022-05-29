@@ -488,12 +488,12 @@ function MMTemplate(props: MMTemplateProps) {
     const components = initialComponents(props.children)
     staticData.current.currentId = components?.[0]?.id
     staticData.current.components = components
-    setCurrentComponent({ currentId: staticData.current.currentId })
     setState(draft => {
       // 确保只更新一次
       draft.components = components
       onChangeParentState('初始化')
-      requestIdleCallback(() => computedShapeAndToolStyle(true))
+      computedShapeAndToolStyle(true)
+      setCurrentComponent({ currentId: staticData.current.currentId })
     })
   }
 
@@ -551,17 +551,7 @@ function MMTemplate(props: MMTemplateProps) {
       >
         {renderComponents(state.components, onRemoteComponentLoad, onEvent, state.isEdit)}
       </div>
-      <Shape ref={shape} tool={
-        <Tool
-          ref={tool}
-          isTop={state.isTop}
-          isBottom={state.isBottom}
-          height={state.toolStyle.height}
-          onMove={(type) => onSortComponent(type)}
-          onCopy={() => onCopyComponent()}
-          onDel={() => onDeleteComponent()}
-        />
-      } />
+      <Shape ref={shape} />
       {/* <div className={style.debug}>{JSON.stringify(staticData.current.currentComponent)}</div> */}
     </div>
   )

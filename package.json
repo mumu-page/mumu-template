@@ -1,6 +1,6 @@
 {
   "name": "sadadas",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "private": true,
   "dependencies": {
     "@jiaminghi/data-view-react": "^1.2.5",
@@ -29,7 +29,7 @@
   "scripts": {
     "start": "craco start",
     "build": "craco build",
-    "postbuild": "copy.sh",
+    "postbuild": "sh copy.sh",
     "test": "craco test",
     "release": "mumu release",
     "eject": "react-scripts eject"
@@ -68,5 +68,5 @@
     "webpack-bundle-analyzer": "^4.5.0"
   },
   "readme": "ERROR: No README data found!",
-  "_id": "sadadas@0.2.3"
+  "_id": "sadadas@0.2.4"
 }
